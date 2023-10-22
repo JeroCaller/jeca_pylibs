@@ -6,7 +6,7 @@ for i in range(1, 2+1):
     super_dir = get_super_dir_directly(__file__, i)
     sys.path.append(super_dir)
 
-from logpackage import (LogFuncEndPoint, DetectErrorAndLog)
+from logpackage import (LogFuncEndPoint, DetectErrorAndLog, LoggerWHT)
 from logexp import LogLowestLevelError
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
@@ -149,6 +149,26 @@ class TestLogDecor(unittest.TestCase):
         log_data = get_log_data()
         #print(log_data)
         self.assertIn("ERROR", log_data)
+
+
+class TestLoggerWHT(unittest.TestCase):
+    def testLoggerTree(self):
+        """
+        LoggerWHT 클래스를 이용하여 logging.Logger처럼 
+        새 로거 객체 이름을 생성할 경우 
+        LoggerTree() 클래스에 로거 트리가 형성되는지 테스트. 
+        """
+        logger_a = LoggerWHT('a')
+        logger_b = LoggerWHT('a.b')
+        logger_c = LoggerWHT('a.b.a.c')
+        self.assertEqual(LoggerWHT.logtree.lenTree(), 4)
+        self.assertEqual(
+            LoggerWHT.logtree.getAllLeafAbs(),
+            ['a.b.a.c']
+        )
+        LoggerWHT().clear()
+        self.assertEqual(LoggerWHT.logtree.lenTree(), 0)
+        self.assertEqual(LoggerWHT.logtree.getRoot(), '<root>')
 
 
 if __name__ == '__main__':
