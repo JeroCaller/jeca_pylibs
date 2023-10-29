@@ -6,8 +6,9 @@ for i in range(1, 2+1):
     super_dir = get_super_dir_directly(__file__, i)
     sys.path.append(super_dir)
 
-from logpackage import (LogFuncEndPoint, DetectErrorAndLog, LoggerWHT)
-from logexp import LogLowestLevelError
+from logpackage import (LogFuncEndPoint, DetectErrorAndLog, 
+LoggerPathTree, LoggerHierarchy)
+from logexc import LogLowestLevelError
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
 
@@ -151,25 +152,73 @@ class TestLogDecor(unittest.TestCase):
         self.assertIn("ERROR", log_data)
 
 
-class TestLoggerWHT(unittest.TestCase):
-    def testLoggerTree(self):
-        """
-        LoggerWHT 클래스를 이용하여 logging.Logger처럼 
-        새 로거 객체 이름을 생성할 경우 
-        LoggerTree() 클래스에 로거 트리가 형성되는지 테스트. 
-        """
-        logger_a = LoggerWHT('a')
-        logger_b = LoggerWHT('a.b')
-        logger_c = LoggerWHT('a.b.a.c')
-        self.assertEqual(LoggerWHT.logtree.lenTree(), 4)
-        self.assertEqual(
-            LoggerWHT.logtree.getAllLeafAbs(),
-            ['a.b.a.c']
-        )
-        LoggerWHT().clear()
-        self.assertEqual(LoggerWHT.logtree.lenTree(), 0)
-        self.assertEqual(LoggerWHT.logtree.getRoot(), '<root>')
+class TestLoggerPathTree(unittest.TestCase):
+    def setUp(self):
+        self.lpt = LoggerPathTree()
+
+    def tearDown(self):
+        self.lpt.clear()
+
+    def testEmtpyTree(self):
+        self.assertEqual(self.lpt.getRoot(), 'root')
+        self.assertEqual(self.lpt.lenTree(), 1)
+
+    def testAppendAbs(self):
+        # test 1
+        self.lpt.appendAbs('root')
+        self.assertEqual(self.lpt.lenTree(), 1)
+        self.assertEqual(self.lpt.getAllLeafAbs()[0], 'root')
+
+        # test 2
+        self.lpt.appendAbs('a')
+        self.assertEqual(self.lpt.lenTree(), 2)
+        self.assertEqual(self.lpt.getAllLeafAbs()[0], 'root.a')
+
+        # test 3
+        self.lpt.appendAbs('b.c')
+        self.assertEqual(self.lpt.lenTree(), 4)
+        self.assertIn('root.b.c', self.lpt.getAllLeafAbs())
+
+        # test 4
+        self.lpt.appendAbs('root.wow.hello.good')
+        self.assertEqual(self.lpt.lenTree(), 7)
+        self.assertIn('root.wow.hello.good', self.lpt.getAllLeafAbs())
+
+
+class TestLoggerHierarchy(unittest.TestCase):
+    def setUp(self):
+        self.lh = LoggerHierarchy()
+
+    def testLoggerHierarchy(self):
+        # test 1
+        current_num = 2
+        self.assertEqual(self.lh.getNumberofNodes(), current_num)
+
+        # test 2
+        logger1 = logging.getLogger('unittest.tlh')
+        logger2 = logging.getLogger('test.is.boring')
+        self.assertEqual(self.lh.getNumberofNodes(), current_num)
+        self.lh.updateLoggerInfo()
+        current_num += 5
+        self.assertEqual(self.lh.getNumberofNodes(), current_num)
+        self.assertIn('root.unittest.tlh', self.lh.getLeafLoggersName())
+        self.assertIn('root.test.is.boring', self.lh.getLeafLoggersName())
+
+        # test 3
+        logger3 = logging.getLogger('unittest.tlh')
+        self.assertEqual(self.lh.getNumberofNodes(), current_num)
+        self.assertIn('root.unittest.tlh', self.lh.getLeafLoggersName())
 
 
 if __name__ == '__main__':
+    def test_only_logger_hierarchy():
+        suite_obj = unittest.TestSuite()
+        suite_obj.addTest(unittest.makeSuite(TestLoggerHierarchy))
+        
+        runner = unittest.TextTestRunner()
+        runner.run(suite_obj)
+    
+    # 다음 코드들 중 한 줄만 택해 주석해제하여 테스트.
+    # (원한다면 모든 코드를 주석 해제하여 테스트해도 됨.)
+    #test_only_logger_hierarchy()
     unittest.main()
