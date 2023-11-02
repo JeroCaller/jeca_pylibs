@@ -10,7 +10,7 @@
 
 class PrintBorderlineDecor():
     def __init__(
-            self, 
+            self,
             borderline_char: str = '=',
             repeat_num: int = 60,
             ):
@@ -32,12 +32,12 @@ class PrintBorderlineDecor():
             print(self.border * self.repeat)
             return result
         return wrapper
-    
+
 
 class TestFailureDecor():
     def __init__(
-            self, 
-            reason: str = None, 
+            self,
+            reason: str = None,
             rusure: bool = False,
             solution: str = None):
         """
@@ -64,7 +64,7 @@ class TestFailureDecor():
             return_result = func(*args, **kwargs)
             return return_result
         return wrapper
-    
+
     @PrintBorderlineDecor(borderline_char="-")
     def printReason(self):
         if self.reason:
@@ -98,12 +98,12 @@ class NoteForLater():
         @PrintBorderlineDecor()
         def wrapper(*args, **kwargs):
             print(f"{func.__module__}.py의 {func.__name__} 함수(또는 메서드)")
-            print(f"해당 모듈의 해당 함수 (또는 메서드)에 대해 다음의 노트가 있습니다.")
+            print("해당 모듈의 해당 함수 (또는 메서드)에 대해 다음의 노트가 있습니다.")
             print(self.memo)
             result = func(*args, **kwargs)
             return result
         return wrapper
-    
+
 
 @NoteForLater(memo="""
     메모 테스트.""")
@@ -113,5 +113,3 @@ def test():
 
 if __name__ == '__main__':
     test()
-    pass
-    

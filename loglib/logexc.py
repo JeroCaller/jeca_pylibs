@@ -27,5 +27,3 @@ class LogLowestLevelError(Exception):
         error_msg += f"현재 logger 객체의 최소 level: {current_levelname}\n"
         error_msg += f"정해진 최소 level: {required_levelname}"
         super().__init__(error_msg)
-
-

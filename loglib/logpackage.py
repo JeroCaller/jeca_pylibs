@@ -19,11 +19,11 @@ except Exception as e:
 import os
 import inspect
 import logging
-import logexc
 from typing import Literal, TypeAlias
-from sub_modules.tree import AbsPath, Node
+
+import logexc
 from sub_modules.tree import PathTree
-from sub_modules.tree import (ALPHABET, LENGTH, AbsPath, SortMode)
+from sub_modules.tree import AbsPath
 
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']
@@ -58,8 +58,7 @@ def makedir(superdirpath: str, dirname: str):
         os.mkdir(fullpath)
     except FileExistsError:
         return fullpath
-    else:
-        return fullpath
+    return fullpath
 
 
 # 로깅 관련 데코레이터 클래스들.
@@ -78,7 +77,7 @@ class LogFuncEndPoint():
         self.logger = logger_obj
         if self.logger.level > logging.INFO:
             raise logexc.LogLowestLevelError(
-                current_level=logging.getLevelName(self.logger.level), 
+                current_level=logging.getLevelName(self.logger.level),
                 required_level=logging.INFO
             )
 
@@ -89,7 +88,7 @@ class LogFuncEndPoint():
             self.logger.info(f"{func.__name__} 함수(메서드) 작업 종료.")
             return return_value
         return wrapper
-    
+
 
 class DetectErrorAndLog():
     def __init__(self, logger_obj: logging.Logger):
@@ -116,20 +115,20 @@ class DetectErrorAndLog():
                 return_value = func(*args, **kwargs)
             except Exception as e:
                 self.logger.exception(e)
-            else:
-                return return_value
+                return None
+            return return_value
         return wrapper
 # ================
 
 
-class LoggerPathTree(PathTree):
+class _LoggerPathTree(PathTree):
     def __init__(
-            self, 
-            default_root: bool = True, 
+            self,
+            default_root: bool = True,
             delimiter: str = '.',
             always_raise_error: bool = False
         ):
-        default_root = True  # 강제로 True로 전환하여 항상 트리에 <root>가 있게 함. 
+        default_root = True  # 강제로 True로 전환하여 항상 트리에 <root>가 있게 함.
         super().__init__(default_root, delimiter, always_raise_error)
         self._adj_list = {}
         self._root = 'root'
@@ -138,10 +137,9 @@ class LoggerPathTree(PathTree):
     def appendAbs(self, new_path: AbsPath, raise_error: bool = False):
         if not self.isAbsPath(new_path):
             if new_path == 'root':
-                return
-            else:
-                self.append(new_path, 'root')
-                return
+                return None
+            self.append(new_path, 'root')
+            return None
         if not new_path.startswith('root' + self._delimiter):
             new_path = self._delimiter.join(['root', new_path])
         return super().appendAbs(new_path, raise_error)
@@ -151,14 +149,14 @@ class LoggerPathTree(PathTree):
         self.append('root')
 
 
-class LoggerHierarchy():
+class _LoggerHierarchy():
     def __init__(self):
         """
         현재 등록된 모든 로거 객체들의 이름을 계층을 가진 트리로 보여주는 클래스. 
         """
         self._root_logger = logging.getLogger()
         self._logger_dict: dict[str, logging.Logger] = {}
-        self._ptree = LoggerPathTree()
+        self._ptree = _LoggerPathTree()
 
         self.updateLoggerInfo()
 
@@ -169,7 +167,7 @@ class LoggerHierarchy():
         """
         self._logger_dict = self._root_logger.manager.loggerDict.copy()
 
-        # logger_dict에서 불필요한 정보는 필터링함. 
+        # logger_dict에서 불필요한 정보는 필터링함.
         temp_dict = {}
         for k, v in self._logger_dict.items():
             if k.startswith('pkg_'): continue
@@ -198,7 +196,7 @@ class LoggerHierarchy():
         호출로 새로고침 필요. 
         """
         return self._ptree.getTreeStructure()
-    
+
     def getLeafLoggersName(self):
         """
         현재까지 등록된 모든 로거 객체들의 계층 트리에서 
@@ -207,7 +205,7 @@ class LoggerHierarchy():
         호출로 새로고침 필요. 
         """
         return self._ptree.getAllLeafAbs()
-    
+
     def getNumberofNodes(self):
         """
         로거 객체 계층 트리 내 노드의 수 반환. 
@@ -216,16 +214,16 @@ class LoggerHierarchy():
 
 
 class PackageLogger():
-    this_instance = None
-    is_initialized: bool = False
+    _this_instance = None
+    _is_initialized: bool = False
 
     def __new__(cls, *args, **kwargs):
-        if cls.this_instance is None:
-            cls.this_instance = super().__new__(cls)
-        return cls.this_instance
+        if cls._this_instance is None:
+            cls._this_instance = super().__new__(cls)
+        return cls._this_instance
 
     def __init__(
-            self, 
+            self,
             current_module_abspath: str | None = None
         ):
         """
@@ -238,33 +236,33 @@ class PackageLogger():
         해당 매개변수에 값을 대입 안해도 됨. 
         None 입력 시 기본으로 지정된 주소에 디렉토리 형성. 
         """
-        if PackageLogger.is_initialized is False:
+        if PackageLogger._is_initialized is False:
             if current_module_abspath is None: return
             self._delimiter = '.'
-            self._lh = LoggerHierarchy()
+            self._lh = _LoggerHierarchy()
             self._root_logger = logging.getLogger()
             self._root_logger.setLevel(logging.DEBUG)
             self.current_module_abspath = current_module_abspath
-            self._log_hierarchy_logger_name = "__log_hierarchy__"  # 로거 계층 구조 로깅 전용 로거 이름. 
-            self._debug_logger_name = "__debug__" # 디버그 로거 객체들의 상위 로거 객체 이름.
-            self._error_logger_name = "__error__" # 에러 로거 객체들의 상위 로거 객체 이름.
-            self._info_logger_name = "__info__" # info 로거 객체들의 상위 로거 객체 이름.
+            self._log_hierarchy_logger_name = "__log_hierarchy__"  # 로거 계층 구조 로깅 전용 로거 이름.
+            self._debug_logger_name = "__debug__"  # 디버그 로거 객체들의 상위 로거 객체 이름.
+            self._error_logger_name = "__error__"  # 에러 로거 객체들의 상위 로거 객체 이름.
+            self._info_logger_name = "__info__"  # info 로거 객체들의 상위 로거 객체 이름.
 
             self.debug_log_file_path, self.error_log_file_path, self.hierarchy_log_file_path \
                 = self._defaultSetLogDirFile()
             self._setLoggerEnvironment()
             self._lh.updateLoggerInfo()
 
-            PackageLogger.is_initialized = True
+            PackageLogger._is_initialized = True
 
     def _defaultSetLogDirFile(self):
         """
         로그 파일명, 로그 파일들을 담을 디렉토리의 이름 및 경로 설정 등에 대해 
         이 메서드에서의 설정을 디폴트 설정으로 하고 디폴트 설정한다. 
         """
-        if self.current_module_abspath is None: return
-        logfilesdirname = "logfiles"  # 로그 파일을 담을 폴더명. 
-        logdir = os.path.dirname(self.current_module_abspath)  # 로그 파일들을 담을 폴더를 생성할 주소. 
+        if self.current_module_abspath is None: return None
+        logfilesdirname = "logfiles"  # 로그 파일을 담을 폴더명.
+        logdir = os.path.dirname(self.current_module_abspath)  # 로그 파일들을 담을 폴더를 생성할 주소.
         logdirfullpath = makedir(logdir, logfilesdirname)
 
         debug_log_file_name = 'debug.log'
@@ -319,12 +317,13 @@ class PackageLogger():
         current_lineno = target_frame.lineno
         not_found_msg = "<The Variables Not Found>"
         target_var_value = local_data.get(var_str, not_found_msg)
-        # 로깅하려는 곳이 클래스의 인스턴스 메서드일 때, 로깅하려는 변수가 
-        # __init__ 메서드에서 정의된 self. 으로 시작되는 인스턴스 변수일 경우 
-        # __init__ 스페셜 메서드가 아닌 일반 인스턴스 메서드에서는 인스턴스 변수가 
-        # 위와 같은 방법으로는 탐지되지 않는다. 클래스 내에서 __init__ 내에 정의된 
-        # 인스턴스 변수가 다른 여러 인스턴스 메서드 실행을 거쳐 어떻게 변하는지 보기 위해 
-        # 로깅하는 용도를 위해 아래 코드를 작성함. 
+
+        # 로깅하려는 곳이 클래스의 인스턴스 메서드일 때, 로깅하려는 변수가
+        # __init__ 메서드에서 정의된 self. 으로 시작되는 인스턴스 변수일 경우
+        # __init__ 스페셜 메서드가 아닌 일반 인스턴스 메서드에서는 인스턴스 변수가
+        # 위와 같은 방법으로는 탐지되지 않는다. 클래스 내에서 __init__ 내에 정의된
+        # 인스턴스 변수가 다른 여러 인스턴스 메서드 실행을 거쳐 어떻게 변하는지 보기 위해
+        # 로깅하는 용도를 위해 아래 코드를 작성함.
         if target_var_value == not_found_msg:
             target_class = local_data.get('self', None)
             if target_class:
@@ -337,30 +336,35 @@ class PackageLogger():
                 target_var_value = not_found_msg
 
         logger_obj = self._getDebugLogger(current_module_name, class_name, method_name)
-        logmsg = f"module name: {current_module_name}, class name: {class_name}, method name: {method_name}, lineno: {current_lineno}\n"
-        logmsg += f"variable: {var_str}: {target_var_value}"
+        logmsg = ''.join([
+                    f"module_name: {current_module_name}, class_name: {class_name}, ",
+                    f"method_name: {method_name}, lineno: {current_lineno}\n",
+                    f"variable: {var_str}: {target_var_value}"
+                ])
         logger_obj.debug(logmsg)
 
     def _getDebugLogger(
-            self, 
-            modulename: str, 
-            classname: str | NoneType, 
-            methodname: str, 
+            self,
+            modulename: str,
+            classname: str | NoneType,
+            methodname: str,
         ):
         """
         logVariable() 메서드를 호출하는 함수 또는 메서드의 이름을 
         로거 객체 이름으로 사용하고 해당 로거 객체를 생성 또는 호출함. 
         """
-        # 주어진 매개변수들의 정보를 토대로 로거 이름 생성. 
+        # 주어진 매개변수들의 정보를 토대로 로거 이름 생성.
         if classname == 'Nonetype':
-            # 로깅하는 곳이 클래스의 메서드가 아닌 함수일 경우. 
+            # 로깅하는 곳이 클래스의 메서드가 아닌 함수일 경우.
             logger_name = self._delimiter.join([self._debug_logger_name, modulename, methodname])
         else:
-            # 클래스 내 특정 인스턴스 메서드 내에서 로깅할 경우. 
-            logger_name = self._delimiter.join([self._debug_logger_name, modulename, classname, methodname])
+            # 클래스 내 특정 인스턴스 메서드 내에서 로깅할 경우.
+            logger_name = self._delimiter.join(
+                [self._debug_logger_name, modulename, classname, methodname])
         logger = logging.getLogger(logger_name)
+        logger.setLevel(logging.DEBUG)
         return logger
-    
+
     def getErrorLogger(self, name: str | None):
         """
         name 인자값을 이름으로 하는 에러 전용 로거 객체를 반환. 
@@ -381,7 +385,7 @@ class PackageLogger():
         """
         info_logger = self._getTypeLogger(name, logging.INFO)
         return info_logger
-    
+
     def getDebugLoggerExplictly(self, name: str | None):
         """
         name 인자값을 이름으로 하는 디버그 전용 로거 객체를 반환. 
@@ -402,44 +406,52 @@ class PackageLogger():
         """
         logger_obj = None
         if level == logging.DEBUG:
-            if name == ('' or 'root' or None or self._debug_logger_name):
+            if name == ('' or 'root' or None
+                        or self._debug_logger_name):
                 logger_name = self._debug_logger_name
             elif os.path.isfile(name) and inspect.getmodulename(name):
-                logger_name = self._delimiter.join([self._debug_logger_name, inspect.getmodulename(name)])
+                logger_name = self._delimiter.join(
+                    [self._debug_logger_name, inspect.getmodulename(name)])
             else:
                 logger_name = self._delimiter.join([self._debug_logger_name, name])
             logger_obj = logging.getLogger(logger_name)
             logger_obj.setLevel(logging.DEBUG)
         elif level == logging.INFO:
-            if name == ('' or 'root' or None or self._info_logger_name):
+            if name == ('' or 'root' or None
+                        or self._info_logger_name):
                 logger_name = self._info_logger_name
             elif os.path.isfile(name) and inspect.getmodulename(name):
-                logger_name = self._delimiter.join([self._info_logger_name, inspect.getmodulename(name)])
+                logger_name = self._delimiter.join(
+                    [self._info_logger_name, inspect.getmodulename(name)])
             else:
                 logger_name = self._delimiter.join([self._info_logger_name, name])
             logger_obj = logging.getLogger(logger_name)
             logger_obj.setLevel(logging.INFO)
         elif level == logging.ERROR:
-            if name == ('' or 'root' or None or self._error_logger_name):
+            if name == ('' or 'root' or None
+                        or self._error_logger_name):
                 logger_name = self._error_logger_name
             elif os.path.isfile(name) and inspect.getmodulename(name):
-                logger_name = self._delimiter.join([self._error_logger_name, inspect.getmodulename(name)])
+                logger_name = self._delimiter.join(
+                    [self._error_logger_name, inspect.getmodulename(name)])
             else:
                 logger_name = self._delimiter.join([self._error_logger_name, name])
             logger_obj = logging.getLogger(logger_name)
             logger_obj.setLevel(logging.ERROR)
         elif level == LOGGERTREE:
-            if name == ('' or 'root' or None or self._log_hierarchy_logger_name):
+            if name == ('' or 'root' or None or
+                        self._log_hierarchy_logger_name):
                 logger_name = self._log_hierarchy_logger_name
             elif os.path.isfile(name) and inspect.getmodulename(name):
-                logger_name = self._delimiter.join([self._log_hierarchy_logger_name, inspect.getmodulename(name)])
+                logger_name = self._delimiter.join(
+                    [self._log_hierarchy_logger_name, inspect.getmodulename(name)])
             else:
                 logger_name = self._delimiter.join([self._log_hierarchy_logger_name, name])
             logger_obj = logging.getLogger(logger_name)
             logger_obj.setLevel(logging.INFO)
         self._lh.updateLoggerInfo()
         return logger_obj
-    
+
     def _setLoggerEnvironment(self):
         """
         로거 객체의 핸들러 관련 설정. 
@@ -473,7 +485,7 @@ class PackageLogger():
             "%(asctime)s - %(levelname)s \n%(message)s"
         )
         error_file_handler = logging.FileHandler(
-            filename=self.error_log_file_path, 
+            filename=self.error_log_file_path,
             encoding='utf-8'
         )
         error_file_handler.setLevel(logging.ERROR)
@@ -508,20 +520,25 @@ class PackageLogger():
         """
         if file == ALLFILES:
             files = [
-                self.debug_log_file_path, 
+                self.debug_log_file_path,
                 self.error_log_file_path,
                 self.hierarchy_log_file_path
             ]
             for f in files:
-                with open(f, 'w', encoding='utf-8'): 
+                with open(f, 'w', encoding='utf-8'):
                     pass
             return
-        
-        if file == DEBUGFILE: filepath = self.debug_log_file_path
-        elif file == ERRORFILE: filepath = self.error_log_file_path
-        elif file == LOGGERFILE: filepath = self._log_hierarchy_logger_name
+
+        if file == DEBUGFILE:
+            filepath = self.debug_log_file_path
+        elif file == ERRORFILE:
+            filepath = self.error_log_file_path
+        elif file == LOGGERFILE:
+            filepath = self._log_hierarchy_logger_name
         else: return
-        with open(filepath, 'w', encoding='utf-8'): pass
+
+        with open(filepath, 'w', encoding='utf-8'):
+            pass
 
     def getCurrentHierarchy(self):
         """
@@ -530,7 +547,7 @@ class PackageLogger():
         """
         self._lh.updateLoggerInfo()
         return self._lh.getLoggerTree()
-    
+
     def getCurrentAllLeafLoggers(self):
         """
         현재까지 등록된 모든 로거 객체들을 계층에 따라 트리 구조로 나타낼 때 
@@ -538,7 +555,7 @@ class PackageLogger():
         """
         self._lh.updateLoggerInfo()
         return self._lh.getLeafLoggersName()
-    
+
     def logAllLoggersTree(self):
         """
         현재까지 생성된 모든 로거 객체들의 이름을 계층 트리 형태로 

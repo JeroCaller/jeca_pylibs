@@ -1,5 +1,7 @@
 import sys
+
 from dirimporttool import get_super_dir_directly
+
 super_dir = get_super_dir_directly(__file__, 3)
 sys.path.append(super_dir)
 
@@ -23,11 +25,10 @@ class PlusMinus():
         self.num2 += additional_num
         collector.logVariable('num2')
         return total
-    
+
     def getSubtractResult(self, additional_num: int = 0):
         total = 0
         total = self.num1 - self.num2
         self.num2 += additional_num
         collector.logVariable('num2')
         return total
-

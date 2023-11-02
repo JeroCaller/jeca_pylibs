@@ -1,13 +1,16 @@
 import unittest
 import logging
 import sys
-from dirimporttool import get_super_dir_directly, get_current_absdir
+
+from dirimporttool import (get_super_dir_directly,
+get_current_absdir)
+
 for i in range(1, 2+1):
     super_dir = get_super_dir_directly(__file__, i)
     sys.path.append(super_dir)
 
-from logpackage import (LogFuncEndPoint, DetectErrorAndLog, 
-LoggerPathTree, LoggerHierarchy)
+from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
+_LoggerPathTree, _LoggerHierarchy)
 from logexc import LogLowestLevelError
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
@@ -23,9 +26,8 @@ def get_log_data(filename: str = LOGFILE) -> (str | None):
     except FileNotFoundError:
         print("Error from function get_log_data.")
         print("해당 로그 파일을 찾지 못했습니다.")
-        return
-    else:
-        return data
+        return None
+    return data
 
 
 class TestLogDecor(unittest.TestCase):
@@ -47,7 +49,7 @@ class TestLogDecor(unittest.TestCase):
     def tearDown(self):
         self.logger.setLevel(logging.DEBUG)
         # 로그 파일 내 내용 리셋.
-        with open(LOGFILE, 'w'): pass
+        with open(LOGFILE, 'w', encoding='utf-8'): pass
 
     def testLogFuncEndPointError(self):
         """
@@ -66,9 +68,9 @@ class TestLogDecor(unittest.TestCase):
                     'div': a / b,
                 }
                 return four_arithmetics
-            
+
             calculator(4, 2)
-        
+
         log_data = get_log_data()
         self.assertEqual(log_data, "")
         self.assertNotIn("INFO", log_data)
@@ -89,7 +91,7 @@ class TestLogDecor(unittest.TestCase):
                 'div': a / b,
             }
             return four_arithmetics
-        
+
         calculator(4, 2)
         log_data = get_log_data()
         self.assertNotEqual(log_data, "")
@@ -99,9 +101,9 @@ class TestLogDecor(unittest.TestCase):
         @DetectErrorAndLog(self.logger)
         def some_error_func():
             return 1 / 0
-        
+
         some_error_func()
-        
+
         log_data = get_log_data()
         #print(log_data)
         self.assertIn("ERROR", log_data)
@@ -115,9 +117,9 @@ class TestLogDecor(unittest.TestCase):
         def outer_func():
             def inner_func():
                 data = int('hi')
-                return 'hi'
+                return data
             return inner_func()
-        
+
         outer_func()
 
         log_data = get_log_data()
@@ -136,7 +138,7 @@ class TestLogDecor(unittest.TestCase):
             @DetectErrorAndLog(self.logger)
             def some_error_func():
                 return 1 / 0
-        
+
             some_error_func()
 
         # test 2
@@ -145,7 +147,7 @@ class TestLogDecor(unittest.TestCase):
         @DetectErrorAndLog(self.logger)
         def some_error_func():
             return 1 / 0
-        
+
         some_error_func()
         log_data = get_log_data()
         #print(log_data)
@@ -154,7 +156,7 @@ class TestLogDecor(unittest.TestCase):
 
 class TestLoggerPathTree(unittest.TestCase):
     def setUp(self):
-        self.lpt = LoggerPathTree()
+        self.lpt = _LoggerPathTree()
 
     def tearDown(self):
         self.lpt.clear()
@@ -187,7 +189,7 @@ class TestLoggerPathTree(unittest.TestCase):
 
 class TestLoggerHierarchy(unittest.TestCase):
     def setUp(self):
-        self.lh = LoggerHierarchy()
+        self.lh = _LoggerHierarchy()
 
     def testLoggerHierarchy(self):
         # test 1
@@ -214,10 +216,10 @@ if __name__ == '__main__':
     def test_only_logger_hierarchy():
         suite_obj = unittest.TestSuite()
         suite_obj.addTest(unittest.makeSuite(TestLoggerHierarchy))
-        
+
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
-    
+
     # 다음 코드들 중 한 줄만 택해 주석해제하여 테스트.
     # (원한다면 모든 코드를 주석 해제하여 테스트해도 됨.)
     #test_only_logger_hierarchy()

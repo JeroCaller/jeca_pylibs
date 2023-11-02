@@ -18,11 +18,10 @@ class MultiDivide:
         self.num1 += additional_num
         collector.logVariable('num1')
         return total
-    
+
     def getDividedResult(self, additional_num: int = 0):
         total = 1
         total = self.num1 / self.num2
         self.num1 += additional_num
         collector.logVariable('num1')
         return total
-    
