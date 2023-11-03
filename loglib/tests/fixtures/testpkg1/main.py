@@ -32,7 +32,7 @@ def main():
     pm_result = (pm_obj.getSumResult(2), pm_obj.getSubtractResult(1))
     md_result = (md_obj.getMultipliedResult(3), md_obj.getDividedResult(4))
 
-    # 에러 로깅을 원치 않는다면 아래 코드 두 줄을 주석 처리.
+    # 에러 로깅을 원치 않는다면 아래 코드 세 줄을 주석 처리.
     #exp_err_result = (expected_error_obj.getMultipliedResult(1),
     #                  expected_error_obj.getDividedResult(2))
     #print(exp_err_result)
