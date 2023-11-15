@@ -29,22 +29,32 @@ def get_log_data(filename: str = LOGFILE) -> (str | None):
         return None
     return data
 
+def get_fixture_logger(
+        logger_name: str | None = None,
+        level: int = logging.DEBUG
+    ) -> (logging.Logger):
+    """테스트용 로거 객체 생성 및 설정 함수."""
+    if logger_name is None:
+        logger_name = 'test_log'
+    fixture_logger = logging.getLogger(logger_name)
+    fixture_logger.setLevel(level)
+    formatter = logging.Formatter(
+        "%(asctime)s - %(name)s - %(levelname)s:\n%(message)s"
+    )
+    file_handler = logging.FileHandler(
+        filename=LOGFILE,
+        mode='w',
+        encoding='utf-8'
+    )
+    file_handler.setLevel(logging.DEBUG)
+    file_handler.setFormatter(formatter)
+    fixture_logger.addHandler(file_handler)
+    return fixture_logger
+
 
 class TestLogDecor(unittest.TestCase):
     def setUp(self):
-        self.logger = logging.getLogger('test_log')
-        self.logger.setLevel(logging.DEBUG)
-        formatter = logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s:\n%(message)s"
-        )
-        file_handler = logging.FileHandler(
-            filename=LOGFILE,
-            mode='w',
-            encoding='utf-8'
-        )
-        file_handler.setLevel(logging.DEBUG)
-        file_handler.setFormatter(formatter)
-        self.logger.addHandler(file_handler)
+        self.logger = get_fixture_logger('test_log', logging.DEBUG)
 
     def tearDown(self):
         self.logger.setLevel(logging.DEBUG)

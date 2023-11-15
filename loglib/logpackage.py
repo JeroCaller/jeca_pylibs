@@ -20,6 +20,10 @@ from sub_modules.tree import AbsPath
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']
 LoggerLevel: TypeAlias = int
+DirPath: TypeAlias = str
+DirName: TypeAlias = str
+FilePath: TypeAlias = str
+FileName: TypeAlias = str
 
 # 상수 정의
 ALLFILES = 0
@@ -226,6 +230,42 @@ class _LoggerHierarchy():
     def getNumberofNodes(self):
         """로거 객체 계층 트리 내 노드의 수 반환."""
         return self._ptree.lenTree()
+    
+
+class LogFileEnvironment():
+    """로그 파일들을 어떻게 저장 및 처리할 것인지를 설정하는 클래스.
+
+    여러 옵션들을 제공하며, 그 중에 원하는 것을 선택하는 형식. 
+
+    추가 예정 옵션들.
+    * 디버그, 에러 등의 로그들을 수준에 따라 분류하여 저장할 것인지 
+    아니면 하나의 로그 파일로 저장할 것인지를 결정하는 옵션.
+    * 로그 파일들을 날짜별로 저장하는 옵션. 하루 단위로 로그 내역들을 
+    하나의 파일에 담아 저장하여 하루 단위로 구별할 것인지, 아니면 
+    달, 년 단위로 구별할 것인지에 대한 옵션.
+    * 로그 파일들을 원할 때 zip파일로 묶는 옵션. 사용자가 원할 때 
+    zip으로 묶는 옵션과 기간(일, 월, 년 등) 단위로 특정 날짜가 되면 자동으로 
+    기존의 로그 파일들을 설정한 기간 단위로 zip으로 묶는 옵션.
+
+    """
+    def __init__(self):
+        self._root_logger = logging.getLogger()
+
+        self.top_level_loggers_name: dict[LoggerLevel, str] = {}
+        self.base_dir: tuple[DirPath, DirName] = ('', 'LogFiles')
+        
+    def setTopLevelLoggersName(self, data: dict[LoggerLevel, str]):
+        """디버그, 에러, Info, 로거 객체 트리 기록 등의 각각의 수준에 따른 
+        최상위 로거 이름을 설정한다. 
+
+        Parameters
+        ----------
+        data : dict[LoggerLevel, str]
+            각 수준과 그 수준에서의 최상위 로거 객체 이름 정보가 담긴 
+            딕셔너리.
+            
+        """
+        ...
 
 
 class PackageLogger():
@@ -259,6 +299,8 @@ class PackageLogger():
             self._root_logger = logging.getLogger()
             self._root_logger.setLevel(logging.DEBUG)
             self.current_module_abspath = current_module_abspath
+            self.log_onoff = True  # 로깅 온오프 기능.
+            self._log_off_handler = logging.NullHandler()
 
             self._top_level_loggers = {
                 LOGGERTREE: "__log_hierarchy__",
@@ -273,6 +315,44 @@ class PackageLogger():
             self._lh.updateLoggerInfo()
 
             PackageLogger._is_initialized = True
+
+    def setLoggingOnOff(self, on_off: bool):
+        """로깅 기능을 킬지 끌지를 결정하는 메서드. 
+
+        자신의 프로젝트 패키지 내 구현한 로깅 코드가 너무 많거나 
+        복잡해서 일일이 로깅 코드들을 삭제하기 어려울 때 로깅 기능을 
+        끌 수 있다. 
+        이 메서드 실행 시 로깅 기능이 곧바로 켜지거나 꺼지는 기능이 즉시 적용된다.
+
+        Parameters
+        ----------
+        on_off : bool
+            로깅 기능을 킬지 끌지에 대한 매개변수
+            True : 로깅 기능을 켠다. 로그 파일에 로그가 기록된다. 
+            False : 로깅 기능을 끈다. 프로그램을 실행해도 로그 기록이 되지 않는다.
+        
+        """
+        self.log_onoff = on_off
+        if on_off:
+            # on
+            self._setLoggerEnvironment()
+        else:
+            # off
+            self._root_logger.handlers = []
+
+    def getCurrentLogOnOff(self):
+        """현재 로깅 기능이 켜져 있는지 확인하기 위한 메서드.
+        
+        self.log_onoff 인스턴스 변수에 저장된 값에 따라 반환.
+
+        Returns
+        -------
+        bool
+            True : 로깅 기능 켜져 있는 상태.
+            False : 로깅 기능 꺼져 있는 상태.
+        
+        """
+        return self.log_onoff
 
     def _defaultSetLogDirFile(self):
         """로그 파일명, 로그 파일들을 담을 디렉토리의 이름 및 경로 설정 등에 대해 
@@ -338,6 +418,8 @@ class PackageLogger():
         ...     results.append(result) 
 
         """
+        if not self.log_onoff: return
+
         target_frame = inspect.stack()[1]
         method_name = target_frame.function
         local_data = target_frame.frame.f_locals
