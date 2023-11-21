@@ -2,8 +2,6 @@ import datetime
 import calendar
 from typing import Literal, TypeAlias
 
-from dateutil.relativedelta import relativedelta
-
 
 class DateOptions():
     DAY = 'day'
