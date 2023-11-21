@@ -1,6 +1,13 @@
 changelog
 ---
 - - -
+> 2023-11-21
+> - loglib
+>   - 로그 파일 저장 디렉토리명에 쓰일 날짜 문자열 관련 기능 추가(tools.py) 및 관련 유닛 테스트 코드 추가.
+>   - 로그 관련 예외 클래스 추가. - NotInitializedConfigError() -> 무언가를 초기 설정하지 않고 다른 기능 이용 시 발생시키는 예외.
+>   - logpackage.py -> PackageLogger 클래스 추후 변경될 예정. 로그 관련 설정을 더 자유롭게 할 수 있도록 변경 중. 변경 내용은 일단 CustomizablePackageLogger 클래스에 반영할 예정. 이후 
+변경 사항 완성 시 해당 클래스를 다시 PackageLogger 클래스로 변경할 수도 있음.
+
 > 2023-11-16
 > - README.md 내용 수정 -> 각 모듈, 라이브러리들에 대한 설명 추가.
 > - loglib
