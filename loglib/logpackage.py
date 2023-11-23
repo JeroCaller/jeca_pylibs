@@ -260,13 +260,13 @@ class LogFileEnvironment():
         self.date_type: tools.DateOptions = None
         self.toplevel_module_path: str = ''
         self.date_tool_obj = tools.DateTools()
-        self.common_formatter: logging.Formatter \
+        self.common_formatter: logging.Formatter | None \
             = self._getDefaultCommonFormatter()
         self.level_formatters: dict[LoggerLevel, logging.Formatter] = {}
 
     def setBaseDir(
             self, 
-            path: str, 
+            superpath: str, 
             dirname: str | None = None
         ):
         """로그 파일들을 저장, 관리할 베이스 디렉토리의 위치를 지정하고, 
@@ -274,7 +274,7 @@ class LogFileEnvironment():
 
         Parameters
         ----------
-        path : str
+        superpath : str
             로그 파일들을 저장할 베이스 디렉토리를 위치시킬 상위 디렉토리의 
             주소 대입. 
         dirname : str | None, default None
@@ -282,9 +282,9 @@ class LogFileEnvironment():
             None 대입 시 'logfiles'라는 이름을 기본으로 설정된다. 
         
         """
-        path = os.path.abspath(path)
+        superpath = os.path.abspath(superpath)
         if dirname is None: dirname = 'logfiles'
-        self.base_dir = os.path.join(path, dirname)
+        self.base_dir = os.path.join(superpath, dirname)
 
     def setTopLevelModulePath(self, module_path: str = ''):
         """로깅할 패키지 내 최상위 모듈 경로를 지정하는 메서드. 
@@ -319,7 +319,8 @@ class LogFileEnvironment():
         
         일, 주, 월, 연 단위로 로그 파일들을 각 폴더 안에 묶어 저장시키도록 
         설정할 수 있다. 또는 기간 구분 없이 모든 로그 파일들을 하나의 
-        폴더에 몰아 넣어 저장하는 방식을 택할 수도 있다. 
+        폴더(setBaseDir()메서드로 지정한 로그 파일 저장용 베이스 디렉토리)에 
+        몰아 넣어 저장하는 방식을 택할 수도 있다. 
 
         Parameters
         ----------
@@ -398,6 +399,12 @@ class LogFileEnvironment():
     def _getDefaultCommonFormatter(self):
         """모든 로그 파일에 공통적으로 적용할 포맷을 사용자가 따로 지정하지 
         않은 경우, 기본 설정 포맷터를 사용하도록 한다.
+        공통 포맷을 지정하고자 하는 경우, setCommonFormatter() 메서드 이용.
+        
+        See Also
+        --------
+        setCommonFormatter()
+
         """
         format_str = "%(asctime)s - %(levelname)s \n%(message)s"
         return logging.Formatter(format_str)

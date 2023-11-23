@@ -24,7 +24,12 @@ class TestDateTools(unittest.TestCase):
         self.datetool.delimiter = '.'
         today_str = self.datetool.getTodaysDateStr()
         re_search = re.search('[0-9]{4}.[0-9]{2}.[0-9]{2}', today_str)
+
+        # 해당 조건을 원문에서 발견하였는가?
+        # 그렇지 않은 경우, None이 반환되며,
+        # 다음 코드에서 테스트가 실패할 것이다.
         self.assertIsInstance(re_search, re.Match)
+        
         self.assertIn('.', re_search.group())
 
     def testCombineDateToGetDateStr(self):
