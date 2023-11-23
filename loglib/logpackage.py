@@ -17,7 +17,7 @@ from typing import Literal, TypeAlias
 import logexc
 from sub_modules.tree import PathTree
 from sub_modules.tree import AbsPath
-from sub_modules import tools
+from loglib import tools
 
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']

@@ -14,6 +14,9 @@ class DateOptions():
 
 
 class DateTools():
+    """logpackage.py 모듈 내에서만 사용하는 클래스.
+    날짜 문자열을 다루는 툴 성격의 클래스이다.
+    """
     def __init__(self):
         self.d_opt = DateOptions()
 

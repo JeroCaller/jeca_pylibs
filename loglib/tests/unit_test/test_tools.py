@@ -5,11 +5,10 @@ import datetime
 
 from dirimporttool import get_super_dir_directly
 
-for i in range(1, 2+1):
-    super_dir = get_super_dir_directly(__file__, i)
-    sys.path.append(super_dir)
+super_dir = get_super_dir_directly(__file__, 2)
+sys.path.append(super_dir)
 
-from sub_modules.tools import (DateOptions, DateTools)
+from tools import (DateOptions, DateTools)
 
 
 class TestDateTools(unittest.TestCase):
