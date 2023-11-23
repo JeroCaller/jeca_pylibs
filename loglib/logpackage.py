@@ -255,18 +255,24 @@ class LogFileEnvironment():
     def __init__(self):
         self._root_logger = logging.getLogger()
 
-        self.top_level_loggers_name: dict[LoggerLevel, str] = {}
+        self.top_level_loggers_name: dict[LoggerLevel, str] | None = None
         self.base_dir: str = ''
-        self.date_type: tools.DateOptions = None
-        self.toplevel_module_path: str = ''
-        self.date_tool_obj = tools.DateTools()
+        self.date_type: tools.DateOptions = tools.DateOptions.FREE
+        self.toplevel_module_path: FilePath = ''
+        self.datetool = tools.DateTools()
         self.common_formatter: logging.Formatter | None \
             = self._getDefaultCommonFormatter()
         self.level_formatters: dict[LoggerLevel, logging.Formatter] = {}
 
+    def getBaseDir(self):
+        """현재 지정된 로그 파일들을 한꺼번에 저장, 관리할 베이스 디렉토리의 
+        절대경로를 반환.
+        """
+        return self.base_dir
+
     def setBaseDir(
             self, 
-            superpath: str, 
+            superpath: DirPath, 
             dirname: str | None = None
         ):
         """로그 파일들을 저장, 관리할 베이스 디렉토리의 위치를 지정하고, 
@@ -286,9 +292,43 @@ class LogFileEnvironment():
         if dirname is None: dirname = 'logfiles'
         self.base_dir = os.path.join(superpath, dirname)
 
-    def setTopLevelModulePath(self, module_path: str = ''):
+    def _setDefaultBaseDir(self):
+        """사용자가 따로 로그 파일들을 저장, 관리할 베이스 디렉토리를 생성할 
+        위치와 베이스 디렉토리 이름을 정하지 않은 경우, 자동으로 기본 설정해주는 메서드.
+        setTopLevelModulePath() 메서드를 통해 사용자가 최상위 모듈을 지정한 경우, 
+        해당 모듈과 같은 디렉토리에 베이스 디렉토리가 생성될 수 있도록 경로를 생성한다.
+        해당 베이스 디렉토리명은 'logfiles'로 한다.
+
+        See Also
+        --------
+        setTopLevelModulePath
+
+        """
+        if not self.toplevel_module_path:
+            error_msg = """사용자가 작업하고 있는 프로젝트 패키지에서의 
+            최상위 모듈(ex. main.py)이 지정되지 않았습니다. 이로 인해, 
+            로그 파일들을 한꺼번에 저장하고 관리할 베이스 디렉토리의 위치를 
+            설정할 수 없었습니다. 해당 에러를 고치려면 다음의 선택지들 중 하나를 택하십시오.
+
+                1. setTopLevelModulePath() 메서드를 통해 최상위 모듈의 경로를 대입하여
+                해당 패키지 내 최상위 모듈이 무엇인지를 알려주삽시오. 
+                2. setBaseDir() 메서드를 통해 로그 파일 저장, 관리 베이스 디렉토리의 위치와 
+                해당 디렉토리명을 지정해주십시오.
+            
+            """
+            raise logexc.NotInitializedConfigError(error_msg)
+        tl_module_dirname = os.path.dirname(self.toplevel_module_path)
+        self.setBaseDir(tl_module_dirname)
+
+    def setTopLevelModulePath(self, module_path: FilePath = ''):
         """로깅할 패키지 내 최상위 모듈 경로를 지정하는 메서드. 
         최상위 모듈(ex. main.py) 내에서 인자로 __file__을 대입하면 된다.
+
+        이 메서드를 호출하면 최상위 모듈이 존재하는 디렉토리 내에 
+        로그 파일들을 한꺼번에 저장, 관리할 베이스 디렉토리가 자동으로 
+        생성된다. 만약 다른 곳에 베이스 디렉토리를 생성하고자 한다면 
+        이 메서드 호출 코드 다음에 setBaseDir() 메서드에 원하는 위치와 
+        해당 디렉토리명을 지어주고 호출하면 된다. 
 
         Parameters
         ----------
@@ -296,7 +336,8 @@ class LogFileEnvironment():
             최상위 모듈의 경로. 최상위 모듈 내에서 __file__를 대입하면 됨.
         
         """
-        self.toplevel_module_path = module_path
+        self.toplevel_module_path = os.path.abspath(module_path)
+        self._setDefaultBaseDir()
         
     def setTopLevelLoggersName(self, data: dict[LoggerLevel, str]):
         """디버그, 에러, Info, 로거 객체 트리 기록 등의 각각의 수준에 따른 
@@ -324,9 +365,9 @@ class LogFileEnvironment():
 
         Parameters
         ----------
-        option : self.DateOptions
-            이 클래스(LogFileEnvironment)의 클래스 속성으로 정의된 
-            클래스 DateOptions 내에 저장된 여러 상수들 중 하나를 택해 대입. 
+        option : tools.DateOptions
+            tools.py 모듈의 DateOptions 클래스에 정의된 여러 
+            상수들 중 하나를 택해 대입. 
             가능한 옵션들)
             DAY : 하루 단위로 로그 파일들을 폴더로 구분하여 저장.
             WEEK : 주 단위로 로그 파일들을 구분하여 저장.
@@ -406,7 +447,7 @@ class LogFileEnvironment():
         setCommonFormatter()
 
         """
-        format_str = "%(asctime)s - %(levelname)s \n%(message)s"
+        format_str = "%(asctime)s - %(levelname)s - %(module)s \n%(message)s"
         return logging.Formatter(format_str)
 
     def setLevelFormatter(self, level: LoggerLevel, strfmt: str):
@@ -447,16 +488,54 @@ class LogFileEnvironment():
         하위 디렉토리에 저장하기 위해, 해당 디렉토리의 경로를 결정하고 
         반환하는 메서드. 
 
-        해당 메서드는 해당 디렉토리의 경로만 생성할 뿐, 실제로 해당 
+        해당 메서드는 해당 디렉토리의 절대경로 문자열만 생성할 뿐, 실제로 해당 
         디렉토리를 생성하지는 않음.
+
+        setDate() 메서드에 FREE 인자값을 대입하였거나 해당 메서드를 통해 
+        기간별 구분 설정을 하지 않은 경우, 날짜 디렉토리 경로를 따로 생성하지 않고, 
+        베이스 디렉토리 경로 문자열을 반환한다.
         """
-        ...
-        # 사용자가 이미 setDate() 메서드를 통해 로그 파일 구분 기준 기간을
-        # 설정한 경우, 연도로 설정한 경우는 연도만, 월로 설정한 경우는
-        # 연도-월로, 일로 설정한 경우는 연도-월-일 형태의 디렉토리명으로
-        # 설정하도록 하는 코드 구현 필요. 
-        # 만약 FREE로 기간 설정을 하지 않는 경우, 하위 디렉토리명을 
-        # 생성하지 않도록 제한한다.
+        if self.date_type == tools.DateOptions.FREE:
+            return self.base_dir
+        
+        if not os.path.isdir(self.base_dir):
+            error_msg = """로그 파일 저장 베이스 디렉토리 경로가 
+            올바르지 않거나 설정되지 않았습니다. 올바른 베이스 디렉토리 
+            경로를 먼저 설정해야 합니다. 이 에러를 고치기 위해선 다음의 
+            선택지들 중 하나를 선택하여 실행해야 합니다.
+
+                1. 베이스 디렉토리를 따로 지정하지 않았고, 시스템에서 
+                자동으로 정해주길 원한다면, 이 클래스의 setTopLevelModulePath() 
+                메서드에서 현재 로깅하고자 하는 프로젝트 패키지 내 최상위 모듈의 
+                경로를 대입합니다. 
+                2. 따로 베이스 디렉토리의 위치와 해당 디렉토리명을 지정하고자 한다면 
+                이 클래스의 setBaseDir() 메서드를 통해 지정합니다.
+            
+            """
+            raise logexc.NotInitializedConfigError(error_msg)
+        
+        if self.date_type == tools.DateOptions.DAY:
+            today = self.datetool.getDateStr(
+                tools.DateOptions.DAY, True
+            )
+        elif self.date_type == tools.DateOptions.WEEK:
+            today = self.datetool.getDateStr(
+                tools.DateOptions.WEEK, True
+            )
+        elif self.date_type == tools.DateOptions.MONTH:
+            today = self.datetool.getDateStr(
+                tools.DateOptions.MONTH, True
+            )
+        elif self.date_type == tools.DateOptions.YEAR:
+            today = self.datetool.getDateStr(
+                tools.DateOptions.YEAR, True
+            )
+        else:
+            # self.date_type 변수에 tools.DateOptions 클래스에 정의된
+            # 상수값들 중 어디에도 포함되지 않는 비정상적인 경우.
+            return None
+        today_dir = os.path.join(self.base_dir, today)
+        return today_dir
 
     def setLoggerEnvironment(self):
         """
