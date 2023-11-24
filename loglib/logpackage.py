@@ -17,7 +17,7 @@ from typing import Literal, TypeAlias
 import logexc
 from sub_modules.tree import PathTree
 from sub_modules.tree import AbsPath
-from loglib import tools
+import tools
 
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']
@@ -327,19 +327,10 @@ class LogFileEnvironment():
         setTopLevelModulePath
 
         """
-        if not self.toplevel_module_path:
-            error_msg = """사용자가 작업하고 있는 프로젝트 패키지에서의 
-            최상위 모듈(ex. main.py)이 지정되지 않았습니다. 이로 인해, 
-            로그 파일들을 한꺼번에 저장하고 관리할 베이스 디렉토리의 위치를 
-            설정할 수 없었습니다. 해당 에러를 고치려면 다음의 선택지들 중 하나를 택하십시오.
-
-                1. setTopLevelModulePath() 메서드를 통해 최상위 모듈의 경로를 대입하여
-                해당 패키지 내 최상위 모듈이 무엇인지를 알려주삽시오. 
-                2. setBaseDir() 메서드를 통해 로그 파일 저장, 관리 베이스 디렉토리의 위치와 
-                해당 디렉토리명을 따로 지정해주십시오.
-            
-            """
-            raise logexc.NotInitializedConfigError(error_msg)
+        if not os.path.isfile(self.toplevel_module_path):
+            raise logexc.NotInitializedConfigError(
+                logexc.NO_TOPLEVEL_MODULE_AND_BASE_DIR
+            )
         tl_module_dirname = os.path.dirname(self.toplevel_module_path)
         self.setBaseDir(tl_module_dirname)
 
@@ -348,8 +339,10 @@ class LogFileEnvironment():
         최상위 모듈(ex. main.py) 내에서 인자로 __file__을 대입하면 된다.
 
         이 메서드를 호출하면 최상위 모듈이 존재하는 디렉토리 내에 
-        로그 파일들을 한꺼번에 저장, 관리할 베이스 디렉토리가 자동으로 
-        생성된다. 만약 다른 곳에 베이스 디렉토리를 생성하고자 한다면 
+        로그 파일들을 한꺼번에 저장, 관리할 베이스 디렉토리의 위치와 
+        그 이름이 자동으로 결정된다(이 메서드만으로는 실제로 해당 베이스
+        디렉토리가 생성되지는 않으니 따로 작업 필요). 
+        만약 다른 곳에 베이스 디렉토리를 생성하고자 한다면 
         이 메서드 호출 코드 다음에 setBaseDir() 메서드에 원하는 위치와 
         해당 디렉토리명을 지어주고 호출하면 된다. 
 
@@ -577,20 +570,7 @@ class LogFileEnvironment():
             return self.base_dir
         
         if not os.path.isdir(self.base_dir):
-            error_msg = """로그 파일 저장 베이스 디렉토리 경로가 
-            올바르지 않거나 설정되지 않았습니다. 올바른 베이스 디렉토리 
-            경로를 먼저 설정해야 합니다. 이 에러를 고치기 위해선 다음의 
-            선택지들 중 하나를 선택하여 실행해야 합니다.
-
-                1. 베이스 디렉토리를 따로 지정하지 않았고, 시스템에서 
-                자동으로 정해주길 원한다면, 이 클래스의 setTopLevelModulePath() 
-                메서드에서 현재 로깅하고자 하는 프로젝트 패키지 내 최상위 모듈의 
-                경로를 대입합니다. 
-                2. 따로 베이스 디렉토리의 위치와 해당 디렉토리명을 지정하고자 한다면 
-                이 클래스의 setBaseDir() 메서드를 통해 지정합니다.
-            
-            """
-            raise logexc.NotInitializedConfigError(error_msg)
+            raise logexc.NotInitializedConfigError(logexc.NO_BASE_DIR)
         
         if self.date_type == tools.DateOptions.DAY:
             today = self.datetool.getDateStr(
@@ -620,6 +600,10 @@ class LogFileEnvironment():
         
         수준별 로그 기록 분류 여부 및 날짜별 분류 옵션에 따라 
         로거 객체의 파일 handler, filter, formatter 등을 설정한다. 
+
+        모든 로거 객체 관련 설정들은 logging 라이브러리의 루트 로거
+        객체를 이용함.
+
         """
         # PackageLogger()._setLoggerEnvironment() 메서드 코드 참고.
         def by_levels():
@@ -695,12 +679,60 @@ class LogFileEnvironment():
             by_all_in_one()
 
 
-class EasySetLogFileEnv(LogFileEnvironment):
+class EasySetLogFileEnv():
     """LogFileEnvironment 클래스를 이용해 로그 파일 환경 설정을 
     더 쉽게 해주는 클래스.
+    기존 LogFileEenvironment 클래스는 로그 환경 설정 절차는 따로 없어서
+    복잡하기에 고안된 클래스.
     """
     def __init__(self):
-        ...
+        self.log_env = LogFileEnvironment()
+
+    def setLogEnv(
+            self,
+            base_dir: DirPath | None = None,
+            base_dir_name: DirName | None = None,
+            toplevel_module_path: FilePath | None = None,
+            level_option: dict[LoggerLevel, str] | None = None,
+            level_log_file_names: dict[LoggerLevel, FileName] | None = None,
+            common_formatter_str: str | None = None,
+            level_formatter_str: dict[LoggerLevel, str] | None = None,
+            date_opt: tools.DateOptions | None = None
+        ):
+        """LogFileEnvironment 클래스로 로그 환경 설정이 어려울 경우 대신 
+        사용할 수 있는 메서드. 
+
+        각각의 설정에 대한 자세한 사항은 LogFileEnvironment 클래스를 참조.
+
+        Parameters
+        ----------
+        base_dir : str | None, default None
+        base_dir_name : str | None, default None
+        toplevel_module_path: str | None, default None
+            로깅을 하고자 하는 사용자의 패키지 디렉토리 내 최상위 모듈(ex. main.py)의 
+            절대경로. 최상위 모듈 내에서 이 메서드 사용 시 __file__ 인자를 대입해도 됨.
+            로그 파일 저장, 관리할 베이스 디렉토리를 기본값으로 설정하고자 한다면 반드시
+            설정해야한다. 만약 베이스 디렉토리 위치와 그 이름을 사용자가 따로 결정한다면 
+            필수 매개변수는 아님.
+        """
+        if os.path.isfile(toplevel_module_path):
+            self.log_env.setTopLevelModulePath(toplevel_module_path)
+
+        if os.path.isdir(base_dir):
+            self.log_env.setBaseDir(base_dir, base_dir_name)
+
+        self.log_env.setLevelOption(level_option)
+        if level_log_file_names:
+            self.log_env.setLogFileNamesForEachLevels(level_log_file_names)
+        self.log_env.setCommonFormatter(common_formatter_str)
+        if level_formatter_str:
+            for lv, strf in level_formatter_str.items():
+                self.log_env.setLevelFormatter(lv, strf)
+        
+        if date_opt:
+            self.log_env.setDate(date_opt)
+        
+        self.log_env.setLoggerEnvironment()
 
 
 class PackageLogger():

@@ -5,7 +5,10 @@ changelog
 > - loglib
 >   - 코드 리팩토링
 >       - tools.py 모듈 이동(sub_modules 디렉토리에서 현 패키지 디렉토리로 옮김) 및 그에 따른 모듈 임포트 관련 리팩토링 -> tools.py 일부 기능이 사용자도 사용해야하기 때문에 옮김.
+>       - logpackage.py 내 에러 메시지를 logexc 모듈로 이동시킴.
 >   - 로그 파일 환경 설정 기능의 LogFileEnvironment 클래스 코드 완성(테스트 필요).
+>   - 로그 파일 환경 설정 클래스 LogFileEnvironment의 실행 과정을 더 명확하게 
+해주는 클래스 EasySetLogFileEnv 코드 구현(테스트 코드 구현 필요).
 
 > 2023-11-23
 > - loglib
