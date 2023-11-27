@@ -6,6 +6,9 @@ changelog
 >   - 독스트링 내 설명 추가(EasySetLogFileEnv 클래스)
 >   - 코드 리팩토링
 >       - EasySetLogFileEnv 클래스 내에서 LogFileEnvironment 클래스를 인스턴스화하여 사용하는 composition 방법에서 상속으로 변경함. -> 사용자가 초기 설정을 한 이후, 중간에 초기 설정을 변경할 수 있도록 하기 위함.
+>       - 독스트링 내 오타 수정.
+>   - 로그 환경 설정 클래스 EasySetLogFileEnv 또는 LogFileEnvironment와 같이 
+사용할 수 있는 패키지 수준 로그 클래스 CustomizablePackageLogger 코드 구현(테스트 코드 필요).
 
 > 2023-11-24
 > - loglib

@@ -37,6 +37,8 @@ WhichFile: TypeAlias = Literal[0, 1, 2, 3]
 LOGGERTREE = 4
 SpecialLoggerType: TypeAlias = Literal[4]
 
+DEFAULT = 'default'
+
 def _makedir(superdirpath: str, dirname: str):
     """특정 위치에 디렉토리를 생성하는 함수. 
 
@@ -260,6 +262,12 @@ class LogFileEnvironment():
 
         self.base_dir: DirPath = ''
         self.toplevel_module_path: FilePath = ''
+        self.default_toplevel_loggers_name = {
+            LOGGERTREE: "__log_hierarchy__",
+            logging.DEBUG: "__debug__",
+            logging.ERROR: "__error__",
+            logging.INFO: "__info__"
+        }
         self.top_level_loggers_name: dict[LoggerLevel, str] | None = None
         self.level_log_file_names: dict[LoggerLevel, FileName] = {
             logging.DEBUG: 'debug.log',
@@ -272,12 +280,6 @@ class LogFileEnvironment():
         self.common_formatter: logging.Formatter | None \
             = self._getDefaultCommonFormatter()
         self.level_formatters: dict[LoggerLevel, logging.Formatter] = {}
-
-    def getBaseDir(self):
-        """현재 지정된 로그 파일들을 한꺼번에 저장, 관리할 베이스 디렉토리의 
-        절대경로를 반환.
-        """
-        return self.base_dir
 
     def setBaseDir(
             self, 
@@ -365,11 +367,12 @@ class LogFileEnvironment():
 
         Parameters
         ----------
-        option : dict[LoggerLevel, TopLevelLoggerName] | None
+        option : dict[LoggerLevel, TopLevelLoggerName] | DEFAULT | None
             로그 파일들을 여러 수준으로 나눠서 저장하고자 하는 경우, 각 level 숫자와 
             각 level의 최상위 로거 객체 이름을 딕셔너리 형태로 기입한다. 자세한 예시는 
             아래 Examples 부분에 설명.
             None으로 설정 시 모든 수준의 로그들을 하나의 로그 파일 안에 저장하는 모드로 전환.
+            logpackage 모듈의 전역 상수인 DEFAULT 입력 시 기본 최상위 로거 객체 이름으로 설정됨.
 
         Examples
         --------
@@ -387,7 +390,10 @@ class LogFileEnvironment():
         }
 
         """
-        self.top_level_loggers_name = option
+        if option == DEFAULT:
+            self.top_level_loggers_name = self.default_toplevel_loggers_name.copy()
+        else:
+            self.top_level_loggers_name = option
 
     def setLogFileNamesForEachLevels(
             self, 
@@ -715,11 +721,12 @@ class EasySetLogFileEnv(LogFileEnvironment):
             로그 파일 저장, 관리할 베이스 디렉토리를 기본값으로 설정하고자 한다면 반드시
             설정해야한다. 만약 베이스 디렉토리 위치와 그 이름을 사용자가 따로 결정한다면 
             필수 매개변수는 아님.
-        level_option : dict[LoggerLevel, TopLevelLoggerName] | None, default None
+        level_option : dict[LoggerLevel, TopLevelLoggerName] | DEFAULT | None, default None
             로그 파일들을 여러 수준으로 나눠서 저장하고자 하는 경우, 각 level 숫자와 
             각 level의 최상위 로거 객체 이름을 딕셔너리 형태로 기입한다. 자세한 예시는 
             아래 Examples 부분에 설명.
             None으로 설정 시 모든 수준의 로그들을 하나의 로그 파일 안에 저장하는 모드로 전환.
+            logpackage 모듈의 전역 상수인 DEFAULT 입력 시 기본 최상위 로거 객체 이름으로 설정됨.
         level_log_file_names : dict[LoggerLevel, FileName] | None, default None
             각 수준별 로그 파일명을 담는 딕셔너리. 뒤에 '.log' 확장자를 붙이지
             않아도 자동으로 추가해줌. 예시는 Examples 부분 참조.
@@ -940,8 +947,8 @@ class PackageLogger():
         위 예시 코드에서, calculator 함수 내 지역 변수인 result를 로깅하고자 한다면 
         다음과 같이 작성. 
 
-        >>> from logpackage import DebugLogger
-        >>> dl = DebugLogger()
+        >>> from logpackage import PackageLogger
+        >>> dl = PackageLogger()
         >>> def calculator(a: int, b: int):
         ...     results = []
         ...     result = a + b
@@ -1191,11 +1198,276 @@ class PackageLogger():
 
 
 class CustomizablePackageLogger():
-    """로그 관련 설정을 원하는대로 설정할 수 있는 클래스."""
-    def __init__(self):
+    """패키지 내 모듈들의 로깅을 하나로 관리할 수 있는 클래스.
+    로그 관련 설정을 원하는대로 설정할 수 있다.
+
+    해당 클래스를 인스턴스화 하기 전에 반드시 로그 관련 환경 설정 클래스인 
+    EasySetLogFileEnv 또는 LogFileEnvironment 클래스를 먼저 인스턴스화해야 함.
+    """
+    _this_instance = None
+    _is_initialized: bool = False
+
+    def __new__(cls, *args, **kwargs):
+        if cls._this_instance is None:
+            cls._this_instance = super().__new__(cls)
+        return cls._this_instance
+
+    def __init__(self, logenv: EasySetLogFileEnv | LogFileEnvironment):
         """
+        Parameters
+        ----------
+        logenv : EasySetLogFileEnv | LogFileEnvironment
+            로그 환경 설정 클래스의 인스턴스를 대입. 
+        
         """
-        ...
+        if not CustomizablePackageLogger._is_initialized:
+            self.logenv = logenv
+            self._delimiter = '.'
+            self._log_hier = _LoggerHierarchy()
+            self._root_logger = logging.getLogger()
+            self._root_logger.setLevel(logging.DEBUG)
+            self.log_onoff = True # 로깅 온오프 기능.
+            
+            CustomizablePackageLogger._is_initialized = True
+
+    def setLogEnvObj(self, new_logenv: EasySetLogFileEnv | LogFileEnvironment):
+        """새 로그 환경 설정 클래스 EasySetLogFileEnv 또는 LogFileEnvironment의 인스턴스
+        를 대입하여 새 로그 환경으로 설정한다.
+        """
+        self.logenv = new_logenv
+
+    def setLoggingOnOff(self, on_off: bool):
+        """로깅 기능을 킬지 끌지를 결정하는 메서드. 
+
+        자신의 프로젝트 패키지 내 구현한 로깅 코드가 너무 많거나 
+        복잡해서 일일이 로깅 코드들을 삭제하기 어려울 때 로깅 기능을 
+        끌 수 있다. 
+        이 메서드 실행 시 로깅 기능이 곧바로 켜지거나 꺼지는 기능이 즉시 적용된다.
+
+        Parameters
+        ----------
+        on_off : bool
+            로깅 기능을 킬지 끌지에 대한 매개변수
+            True : 로깅 기능을 켠다. 로그 파일에 로그가 기록된다. 
+            False : 로깅 기능을 끈다. 프로그램을 실행해도 로그 기록이 되지 않는다.
+        
+        """
+        self.log_onoff = on_off
+        if on_off:
+            # on
+            self.logenv.setLoggerEnvironment()
+        else:
+            # off
+            self._root_logger.handlers = []
+
+    def getCurrentLogOnOff(self):
+        """현재 로깅 기능이 켜져 있는지 확인하기 위한 메서드.
+        
+        self.log_onoff 인스턴스 변수에 저장된 값에 따라 반환.
+
+        Returns
+        -------
+        bool
+            True : 로깅 기능 켜져 있는 상태.
+            False : 로깅 기능 꺼져 있는 상태.
+        
+        """
+        return self.log_onoff
+    
+    def _getDebugVarLogger(
+            self,
+            modulename: str,
+            classname: str | NoneType,
+            methodname: str,
+        ):
+        """logVariable() 메서드 호출로 로깅을 시도하는 함수(또는 메서드)의 
+        이름을 로거 객체 이름으로 사용하고, 해당 로거 객체를 생성, 호출하는 메서드.
+        """
+        debug_toplevel_name = self.logenv.top_level_loggers_name[logging.DEBUG]
+        # 주어진 매개변수들의 정보를 토대로 로거 이름 생성.
+        if classname == 'NoneType':
+            # 로깅하는 곳이 클래스의 메서드가 아닌 함수일 경우.
+            logger_name = self._delimiter.join(
+                [debug_toplevel_name, modulename, methodname]
+            )
+        else:
+            # 클래스 내 특정 인스턴스 메서드 내에서 로깅할 경우.
+            logger_name = self._delimiter.join(
+                [debug_toplevel_name, modulename, classname, methodname]
+            )
+        logger_obj = logging.getLogger(logger_name)
+        logger_obj.setLevel(logging.DEBUG)
+        return logger_obj
+    
+    def logVariable(self, var_str: str):
+        """특정 함수 또는 메서드 내 로깅하고자 하는 
+        특정 지역 변수 이름을 문자열로 대입하면 해당 변수값을 로깅해주는 메서드. 
+
+        해당 메서드는 특정 함수(또는 메서드) 안에서 호출하면 해당 함수의 이름과 
+        메서드의 경우 해당 메서드가 포함된 클래스명까지 자동으로 추출한다. 
+
+        만약 `var_str`로 대입된 변수를 찾지 못한다면 로깅 파일에 <The Variables Not Found>
+        이라는 메시지가 대신 로깅됨. 
+
+        만약 클래스 내 `__init__`에서 정의된 self. 로 시작되는 인스턴스 변수를 추적하여 
+        로깅하고자 한다면 `var_str`에 'self.변수' 형식이 아닌 '변수' 형식으로 대입해야 함. 
+        이 때, `__init__`에 정의되지 않은 self.로 시작되는 인스턴스 변수는 추적, 로깅이 안됨. 
+
+        Parameters
+        ----------
+        var_str : str
+            로깅하고자 하는 변수명의 문자열 형태. 
+
+        Examples
+        --------
+
+        사용 예)
+
+        >>> def calculator(a: int, b: int):
+        ...     results = []
+        ...     result = a + b
+        ...     results.append(result)
+        ...     result = a * b
+        ...     results.append(result)
+
+        위 예시 코드에서, calculator 함수 내 지역 변수인 result를 로깅하고자 한다면 
+        다음과 같이 작성. 
+
+        >>> from logpackage import CustomizablePackageLogger
+        >>> dl = CustomizablePackageLogger()
+        >>> def calculator(a: int, b: int):
+        ...     results = []
+        ...     result = a + b
+        ...     dl.logVariable('result')
+        ...     results.append(result)
+        ...     result = a * b
+        ...     dl.logVariable('result')
+        ...     results.append(result) 
+
+        """
+        if not self.log_onoff: return
+
+        target_frame = inspect.stack()[1]
+        method_name = target_frame.function
+        local_data = target_frame.frame.f_locals
+        class_name = local_data.get('self', None).__class__.__name__
+        current_module_name = inspect.getmodulename(target_frame.filename)
+        current_lineno = target_frame.lineno
+        not_found_msg = "<The Variables Not Found>"
+        target_var_value = local_data.get(var_str, not_found_msg)
+
+        # 로깅하려는 곳이 클래스의 인스턴스 메서드일 때, 로깅하려는 변수가
+        # __init__ 메서드에서 정의된 self. 으로 시작되는 인스턴스 변수일 경우
+        # __init__ 스페셜 메서드가 아닌 일반 인스턴스 메서드에서는 인스턴스 변수가
+        # 위 코드와 같은 방법으로는 탐지되지 않는다. 클래스 내에서 __init__ 내에 정의된
+        # 인스턴스 변수가 다른 여러 인스턴스 메서드 실행을 거쳐 어떻게 변하는지 보기 위해
+        # 로깅하는 용도를 위해 아래 코드를 작성함.
+        if target_var_value == not_found_msg:
+            target_class = local_data.get('self', None)
+            if target_class:
+                target_class_init_vars = target_class.__dict__
+                try:
+                    target_var_value = target_class_init_vars[var_str]
+                except KeyError:
+                    target_var_value = not_found_msg
+            else:
+                target_var_value = not_found_msg
+
+        logger_obj = self._getDebugVarLogger(current_module_name, class_name, method_name)
+        logmsg = ''.join([
+                    f"module_name: {current_module_name}, class_name: {class_name}, ",
+                    f"method_name: {method_name}, lineno: {current_lineno}\n",
+                    f"variable: {var_str}: {target_var_value}"
+                ])
+        logger_obj.debug(logmsg)
+
+    def _getTypeLogger(
+            self,
+            name: str | None,
+            level: LoggerLevel | SpecialLoggerType
+        ):
+        """로거 객체명과 로거 타입을 레벨로 입력하면 해당 타입에 맞는 로거 객체 반환. 
+
+        Parameters
+        ----------
+        name : str | None
+            로거 객체 이름. 해당 로거 객체를 사용하는 모듈에서 __file__로 대입하면 
+            해당 모듈명이 로거 객체명이 됨. 
+        level : LoggerLevel | LOGGERTREE
+            logging 모듈에서 제공하는 일부 level (DEBUG, INFO, ERROR) 
+            또는 LOGGERTREE 상수. 
+        
+        """
+        logger_obj = None
+        base_logger_name = self.logenv.top_level_loggers_name[level]
+        if (name == ('' or 'root' or None)
+                or name in self.logenv.top_level_loggers_name.values()):
+            logger_name = base_logger_name
+        elif os.path.isfile(name) and inspect.getmodulename(name):
+            logger_name = self._delimiter.join(
+                    [base_logger_name, inspect.getmodulename(name)]
+                )
+        else:
+            logger_name = self._delimiter.join([base_logger_name, name])
+        logger_obj = logging.getLogger(logger_name)
+        if level == LOGGERTREE:
+            logger_obj.setLevel(logging.INFO)
+        else:
+            logger_obj.setLevel(level)
+
+        self._log_hier.updateLoggerInfo()
+        return logger_obj
+    
+    def getErrorLogger(self, name: str | None):
+        """name 인자값을 이름으로 하는 에러 전용 로거 객체를 반환."""
+        error_logger = self._getTypeLogger(name, logging.ERROR)
+        return error_logger
+
+    def getLoggerTreeLogger(self, name: str | None):
+        """name 인자값을 이름으로 하는 로거 계층 트리 전용 로거 객체를 반환."""
+        logger_tree_logger = self._getTypeLogger(name, LOGGERTREE)
+        return logger_tree_logger
+
+    def getInfoLogger(self, name: str | None):
+        """name 인자값을 이름으로 하는 info 전용 로거 객체를 반환."""
+        info_logger = self._getTypeLogger(name, logging.INFO)
+        return info_logger
+
+    def getDebugLogger(self, name: str | None):
+        """name 인자값을 이름으로 하는 디버그 전용 로거 객체를 반환. 
+
+        이 클래스의 logVariable() 메서드와는 따로 디버그 로거 객체를 생성하여 
+        따로 쓰고자 할 때 사용. 
+        """
+        debug_logger = self._getTypeLogger(name, logging.DEBUG)
+        return debug_logger
+    
+    def getCurrentHierarchy(self):
+        """현재까지 등록된 모든 로거 객체들을 계층에 따라 트리 구조로 
+        나타낸 문자열 반환. 
+        """
+        self._log_hier.updateLoggerInfo()
+        return self._log_hier.getLoggerTree()
+
+    def getCurrentAllLeafLoggers(self):
+        """현재까지 등록된 모든 로거 객체들을 계층에 따라 트리 구조로 나타낼 때 
+        leaf 노드에 해당하는 모든 로거 객체 이름들을 리스트로 모아 반환. 
+        """
+        self._log_hier.updateLoggerInfo()
+        return self._log_hier.getLeafLoggersName()
+
+    def logAllLoggersTree(self):
+        """현재까지 생성된 모든 로거 객체들의 이름을 계층 트리 형태로 
+        로깅함. 
+        """
+        hierarchy_logger = logging.getLogger(
+            self.logenv.top_level_loggers_name[LOGGERTREE]
+        )
+        hierarchy_logger.setLevel(logging.INFO)
+        tree_str = self.getCurrentHierarchy()
+        all_leaf = self.getCurrentAllLeafLoggers()
+        all_leaf = '\n'.join(all_leaf)
+        hierarchy_logger.info(f"{tree_str}\n\n{all_leaf}")
 
 
 if __name__ == '__main__':
