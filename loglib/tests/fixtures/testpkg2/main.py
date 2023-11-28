@@ -22,7 +22,6 @@ log_env.setEssentialLogEnv(
     date_opt=DateOptions.DAY
 )
 pl = CustomizablePackageLogger(logenv=log_env)
-print(pl.logenv)
 error_logger = pl.getErrorLogger(__file__)
 program_start_end_logger = pl.getInfoLogger('program_start_end')
 
