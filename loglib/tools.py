@@ -82,9 +82,9 @@ class DateTools():
             self, 
             format_option: DateOptions.DateType,
             is_today: bool = False,
-            year: int = 0,
-            month: int = 0,
-            day: int = 0,
+            year: int = 1,
+            month: int = 1,
+            day: int = 1,
         ) -> (str):
         """특정 날짜의 연, 월, 일을 각각 숫자로 입력하면 이를 토대로 
         특정 포맷의 날짜 문자열로 반환.
@@ -98,9 +98,9 @@ class DateTools():
             오늘 날짜를 입력하고자 하는 경우 True를 선택. 
             True 대입 시 매개변수 year, month, day에 대입된 값을 모두 
             무시한다.
-        year : int, default 0
-        month : int, default 0
-        day : int, default 0
+        year : int, default 1
+        month : int, default 1
+        day : int, default 1
         
         Returns
         ------

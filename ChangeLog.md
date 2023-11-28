@@ -1,6 +1,15 @@
 changelog
 ---
 - - -
+> 2023-11-28
+> - loglib
+>   - 코드 리팩토링
+>       - logpackage.py 모듈 내 몇몇 클래스 독스트링 추가 및 수정.
+>       - logpackage.py 모듈의 LogFileEnvironment 클래스에서, 로그 수준별 로그 파일 분류 옵션과 로그 수준별 최상위 로거 객체 이름 설정 기능을 분리하여 사용자가 로그 파일을 수준별 분류로 하지 않아도 로그 수준별 최상위 로거 객체 생성에 영향이 가지 않도록 수정함. 
+>       - logexc.py 모듈 내 예외 클래스 이름을 짧게 줄임.
+>       - tools.py의 DateTools.getDateStr() 키워드 인자 및 독스트링 수정.
+>   - CustomizablePackageLogger, EasySetLogFileEnv, LogFileEnvironment 클래스 테스트를 위한 패키지 fixture 생성 및 테스트를 위한 코드 설정(loglib\tests\fixtures\testpkg2). -> 해당 패키지 fixture 자체 실행 결과 에러, 버그는 아직 발견하지 못함. -> 추후 여러 상황에 대한 테스트 코드 구현 예정.
+
 > 2023-11-27
 > - loglib
 >   - 독스트링 내 설명 추가(EasySetLogFileEnv 클래스)

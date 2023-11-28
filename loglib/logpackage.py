@@ -241,11 +241,6 @@ class LogFileEnvironment():
     여러 옵션들을 제공하며, 그 중에 원하는 것을 선택하는 형식. 
 
     추가 예정 옵션들.
-    * 디버그, 에러 등의 로그들을 수준에 따라 분류하여 저장할 것인지 
-    아니면 하나의 로그 파일로 저장할 것인지를 결정하는 옵션.
-    * 로그 파일들을 날짜별로 저장하는 옵션. 하루 단위로 로그 내역들을 
-    하나의 파일에 담아 저장하여 하루 단위로 구별할 것인지, 아니면 
-    달, 년 단위로 구별할 것인지에 대한 옵션.
     * 로그 파일들을 원할 때 zip파일로 묶는 옵션. 사용자가 원할 때 
     zip으로 묶는 옵션과 기간(일, 월, 년 등) 단위로 특정 날짜가 되면 자동으로 
     기존의 로그 파일들을 설정한 기간 단위로 zip으로 묶는 옵션.
@@ -256,29 +251,61 @@ class LogFileEnvironment():
     이 클래스에서 디렉토리 경로 문자열을 생성하는 메서드들은 모두 실제 
     해당 경로에 디렉토리를 생성하지는 않음.
 
+    로그 파일 환경 설정 과정
+
+    1. 먼저 모든 로그 파일들을 하나의 장소 안에 저장, 생성, 관리하기 위해 
+    이를 위한 베이스 디렉토리를 생성한다. 이를 위해 둘 중 하나를 선택한다.
+        (1) setBaseDir() 메서드를 통해 베이스 디렉토리를 위치시킬 상위
+        디렉토리의 위치와 해당 베이스 디렉토리의 이름을 정한다.
+        (2) setTopLevelModulePath() 메서드를 통해, 사용자의 프로젝트 패키지 
+        내 최상위 모듈(예: main.py)의 경로를 대입한다. 그러면 기본 베이스 
+        디렉토리 경로로 자동 결정된다. 
+    2. 로그 파일 분류 옵션을 설정한다. 로그 수준별 로그 파일 분류 여부를 
+    결정하려면 setLevelOption()을, 날짜별 분류 옵션은 setDate() 메서드를 
+    이용한다. 
+    3. setLoggerEnvironment() 메서드를 호출하면 여태까지 설정한 모든 
+    로그 파일 환경 관련 옵션들이 적용된다.
+
     """
     def __init__(self):
         self._root_logger = logging.getLogger()
 
         self.base_dir: DirPath = ''
         self.toplevel_module_path: FilePath = ''
+
+        # 로그 파일을 로그 수준별로 나눠서 저장할 지, 
+        # 하나의 로그 파일 안에 모든 수준의 로그를 기록하도록
+        # 할지 결정하는 변수.
+        # True : 로그 수준별로 나눠서 저장하는 모드.
+        # False : 하나의 로그 파일 안에 모든 수준의 로그 기록 모드.
+        self.level_mode: bool = True
+
         self.default_toplevel_loggers_name = {
             LOGGERTREE: "__log_hierarchy__",
             logging.DEBUG: "__debug__",
             logging.ERROR: "__error__",
             logging.INFO: "__info__"
         }
-        self.top_level_loggers_name: dict[LoggerLevel, str] | None = None
-        self.level_log_file_names: dict[LoggerLevel, FileName] = {
+        self.top_level_loggers_name: dict[LoggerLevel, str] \
+            = self.default_toplevel_loggers_name.copy()
+        self.default_level_log_file_names = {
             logging.DEBUG: 'debug.log',
             logging.INFO: 'info.log',
             logging.ERROR: 'error.log',
             LOGGERTREE: 'logger_tree.log',
         }
+        self.level_log_file_names: dict[LoggerLevel, FileName] \
+            = self.default_level_log_file_names.copy()
+        
         self.date_type: tools.DateOptions = tools.DateOptions.FREE
         self.datetool = tools.DateTools()
-        self.common_formatter: logging.Formatter | None \
-            = self._getDefaultCommonFormatter()
+
+        self.default_common_formatter \
+            = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(module)s \n%(message)s"
+            )
+        self.common_formatter: logging.Formatter \
+            = self.default_common_formatter
         self.level_formatters: dict[LoggerLevel, logging.Formatter] = {}
 
     def setBaseDir(
@@ -313,7 +340,7 @@ class LogFileEnvironment():
 
         Raises
         ------
-        logexc.NotInitializedConfigError
+        logexc.NotInitConfigError
             사용자가 작업하고 있는 프로젝트 패키지에서의 최상위 모듈(ex. main.py)을 
             지정하지 않은 경우 발생하는 예외. 이 예외를 해결하는 방법은 두 가지이다.
 
@@ -330,7 +357,7 @@ class LogFileEnvironment():
 
         """
         if not os.path.isfile(self.toplevel_module_path):
-            raise logexc.NotInitializedConfigError(
+            raise logexc.NotInitConfigError(
                 logexc.NO_TOPLEVEL_MODULE_AND_BASE_DIR
             )
         tl_module_dirname = os.path.dirname(self.toplevel_module_path)
@@ -357,47 +384,24 @@ class LogFileEnvironment():
         self.toplevel_module_path = os.path.abspath(module_path)
         self._setDefaultBaseDir()
 
-    def setLevelOption(
-            self, 
-            option: dict[LoggerLevel, str] | None
-        ):
+    def setLevelOption(self, set_to_level: bool):
         """로그 파일들을 저장할 때 디버그, 에러, INFO 별로 로그 파일들을 나눠서 
         저장할 지, 아니면 모든 수준의 로그 기록들을 하나의 로그 파일 안에 몰아서 
-        저장할 지에 대한 옵션을 결정하는 메서드. 
+        저장할 지에 대한 옵션을 결정하는 메서드.
 
         Parameters
-        ----------
-        option : dict[LoggerLevel, TopLevelLoggerName] | DEFAULT | None
-            로그 파일들을 여러 수준으로 나눠서 저장하고자 하는 경우, 각 level 숫자와 
-            각 level의 최상위 로거 객체 이름을 딕셔너리 형태로 기입한다. 자세한 예시는 
-            아래 Examples 부분에 설명.
-            None으로 설정 시 모든 수준의 로그들을 하나의 로그 파일 안에 저장하는 모드로 전환.
-            logpackage 모듈의 전역 상수인 DEFAULT 입력 시 기본 최상위 로거 객체 이름으로 설정됨.
-
-        Examples
-        --------
-
-        로그 파일들을 여러 수준으로 나누고 각 수준들의 로그들을 각각의 로그 파일에 
-        기록, 저장하고자 할 경우, 각 수준의 최상위 로거 객체 이름을 딕셔너리 형태로 
-        option 매개변수에 지정한다. 그러면 이후 각 수준의 로그 객체들은 해당 수준의 
-        최상위 로거 객체 안에서 관리하게끔 함.
-
-        예시)
-        option = {
-            logging.DEBUG : '__debug_log__', 
-            logging.ERROR : '__error_log__',
-            logging.INFO : '__info_log__',
-        }
-
+        ---------- 
+        set_to_level : bool
+            True - 로그 파일을 각 수준별로 나눠서 저장하는 모드로 설정.
+            False - 모든 로거 수준의 로그 기록들을 하나의 로그 파일로 
+            저장하는 모드로 설정.
+        
         """
-        if option == DEFAULT:
-            self.top_level_loggers_name = self.default_toplevel_loggers_name.copy()
-        else:
-            self.top_level_loggers_name = option
+        self.level_mode = set_to_level
 
     def setLogFileNamesForEachLevels(
             self, 
-            level_file_names: dict[LoggerLevel, str]
+            level_file_names: dict[LoggerLevel, str] | None
         ):
         """수준별로 로그 파일들을 분류하여 저장할 경우, 각 수준별 
         로그 파일명을 설정하는 메서드. 
@@ -407,7 +411,7 @@ class LogFileEnvironment():
 
         Parameters
         ----------
-        level_file_names : dict[LoggerLevel, str]
+        level_file_names : dict[LoggerLevel, str] | None
             각 수준별 로그 파일명을 담는 딕셔너리. 뒤에 '.log' 확장자를 붙이지
             않아도 자동으로 추가해줌.
 
@@ -416,8 +420,15 @@ class LogFileEnvironment():
                 logging.DEBUG: 'debug',
                 logging.ERROR: 'error',
             }
+
+            None 입력 시 기본 로그 파일명으로 설정됨.
         
         """
+        if level_file_names is None:
+            self.level_log_file_names \
+                = self.default_level_log_file_names.copy()
+            return
+
         self.level_log_file_names.clear()
         for k, v in level_file_names.items():
             if not v.endswith('.log'):
@@ -438,7 +449,7 @@ class LogFileEnvironment():
             로그 파일에 기록될 로그 포맷을 문자열로 설정. 문자열 
             포맷 방식은 logging 내장 모듈의 Formatter() 클래스 생성자 
             내에 사용하는 문자열 포맷 형식을 따름.
-            문자열 포맷을 공통적으로 적용하지 않게 하려면 None으로 설정.
+            기본 공통 문자열 포맷으로 설정하고자 한다면 None 대입.
 
         See Also
         --------
@@ -446,22 +457,9 @@ class LogFileEnvironment():
         
         """
         if strfmt is None:
-            self.common_formatter = None
-            return
-        self.common_formatter = logging.Formatter(strfmt)
-
-    def _getDefaultCommonFormatter(self):
-        """모든 로그 파일에 공통적으로 적용할 포맷을 사용자가 따로 지정하지 
-        않은 경우, 기본 설정 포맷터를 사용하도록 한다.
-        공통 포맷을 지정하고자 하는 경우, setCommonFormatter() 메서드 이용.
-        
-        See Also
-        --------
-        setCommonFormatter()
-
-        """
-        format_str = "%(asctime)s - %(levelname)s - %(module)s \n%(message)s"
-        return logging.Formatter(format_str)
+            self.common_formatter = self.default_common_formatter
+        else:
+            self.common_formatter = logging.Formatter(strfmt)
 
     def setLevelFormatter(self, level: LoggerLevel, strfmt: str):
         """각 수준에 따른 로그 문자열 포맷 결정 메서드. 
@@ -474,6 +472,9 @@ class LogFileEnvironment():
         만약 setCommonFormatter() 메서드를 통해 모든 로그 수준에 똑같은 
         로그 문자열 포맷을 지정한 경우, 이를 무시하고 각 로그 수준에 적용된 
         로그 포맷을 따른다.
+
+        이 메서드는 먼저 setLevelOption 메서드를 통해 수준별 로그 파일 저장
+        모드로 설정해야 효과가 있음. 
 
         Parameters
         ----------
@@ -488,6 +489,7 @@ class LogFileEnvironment():
         --------
         setCommonFormatter
         clearLevelFormatter
+        setLevelOption
         
         """
         self.level_formatters[level] = logging.Formatter(strfmt)
@@ -550,7 +552,7 @@ class LogFileEnvironment():
 
         Raises
         ------
-        logexc.NotInitializedConfigError
+        logexc.NotInitConfigError
             로그 파일들을 한꺼번에 저장, 관리하는 베이스 디렉토리 경로가 
             결정되지 않은 경우 발생하는 예외. 이 예외를 없앨려면 다음의 선택지들 중 
             하나를 골라서 실행해야 함.
@@ -576,7 +578,7 @@ class LogFileEnvironment():
             return self.base_dir
         
         if not os.path.isdir(self.base_dir):
-            raise logexc.NotInitializedConfigError(logexc.NO_BASE_DIR)
+            raise logexc.NotInitConfigError(logexc.NO_BASE_DIR)
         
         if self.date_type == tools.DateOptions.DAY:
             today = self.datetool.getDateStr(
@@ -612,6 +614,8 @@ class LogFileEnvironment():
 
         """
         # PackageLogger()._setLoggerEnvironment() 메서드 코드 참고.
+        os.makedirs(self.base_dir, exist_ok=True)
+
         def by_levels():
             """수준별 로거 객체들에 대한 핸들러, 포맷 등의 설정 함수."""
             def get_formatter(level: LoggerLevel):
@@ -631,11 +635,12 @@ class LogFileEnvironment():
                     최상위 로거 객체 이름이 설정되지 않았습니다. 
                     setTopLevelLoggersName() 메서드를 통해 설정 필요.
                     """
-                    raise logexc.NotInitializedConfigError(error_msg)
+                    raise logexc.NotInitConfigError(error_msg)
                 return new_filter
             
             def get_file_handler(level: LoggerLevel):
                 date_dir = self.generateDateDirPath()
+                os.makedirs(date_dir, exist_ok=True)
                 log_file_name = self.level_log_file_names[level]
                 if not log_file_name.endswith('.log'):
                     log_file_name = '.'.join([log_file_name, 'log'])
@@ -661,6 +666,7 @@ class LogFileEnvironment():
             로거 객체에 대한 핸들러, 포맷 등의 설정 함수.
             """
             date_dir = self.generateDateDirPath()
+            os.makedirs(date_dir, exist_ok=True)
             log_file_name = self.datetool.getDateStr(
                 tools.DateOptions.DAY, True
             )
@@ -673,15 +679,15 @@ class LogFileEnvironment():
             )
             file_handler.setLevel(logging.DEBUG)
             if not self.common_formatter:
-                file_handler.setFormatter(self._getDefaultCommonFormatter())
+                file_handler.setFormatter(self.default_common_formatter)
             else:
                 file_handler.setFormatter(self.common_formatter)
             self._root_logger.addHandler(file_handler)
 
-        if self.top_level_loggers_name:
+        if self.level_mode:
             by_levels()
         else:
-            # if not self.top_level_loggers_name
+            # if not self.level_mode
             by_all_in_one()
 
 
@@ -690,17 +696,14 @@ class EasySetLogFileEnv(LogFileEnvironment):
     더 쉽게 해주는 클래스.
     기존 LogFileEenvironment 클래스는 로그 환경 설정 절차는 따로 없어서
     복잡하기에 고안된 클래스. 
-    해당 클래스의 setLogEnv() 메서드를 이용하면 됨.
+    해당 클래스의 setEssentialLogEnv() 메서드를 이용하면 됨.
     """
-    def setLogEnv(
+    def setEssentialLogEnv(
             self,
             base_dir: DirPath | None = None,
             base_dir_name: DirName | None = None,
             toplevel_module_path: FilePath | None = None,
-            level_option: dict[LoggerLevel, str] | None = None,
-            level_log_file_names: dict[LoggerLevel, FileName] | None = None,
-            common_formatter_str: str | None = None,
-            level_formatter_str: dict[LoggerLevel, str] | None = None,
+            level_option: bool = True,
             date_opt: tools.DateOptions | None = None
         ):
         """LogFileEnvironment 클래스로 로그 환경 설정이 어려울 경우 대신 
@@ -727,19 +730,6 @@ class EasySetLogFileEnv(LogFileEnvironment):
             아래 Examples 부분에 설명.
             None으로 설정 시 모든 수준의 로그들을 하나의 로그 파일 안에 저장하는 모드로 전환.
             logpackage 모듈의 전역 상수인 DEFAULT 입력 시 기본 최상위 로거 객체 이름으로 설정됨.
-        level_log_file_names : dict[LoggerLevel, FileName] | None, default None
-            각 수준별 로그 파일명을 담는 딕셔너리. 뒤에 '.log' 확장자를 붙이지
-            않아도 자동으로 추가해줌. 예시는 Examples 부분 참조.
-        common_formatter_str: str | None, default None
-            모든 로그 파일들에 똑같은 로그 포맷을 적용하고자 할 때 사용하는 매개변수.
-            로그 파일에 기록될 로그 포맷을 문자열로 설정. 문자열 
-            포맷 방식은 logging 내장 모듈의 Formatter() 클래스 생성자 
-            내에 사용하는 문자열 포맷 형식을 따름.
-            문자열 포맷을 공통적으로 적용하지 않게 하려면 None으로 설정. 
-            level_formatter_str 매개변수로 각 로그 수준에 따른 포맷을 지정한 경우, 
-            공통 포맷은 무시됨.
-        level_formatter_str : dict[LoggerLevel, str] | None, default None
-            로그 수준에 따른 로그 문자열 포맷 결정 매개변수. Examples 예시 참조.
         date_opt: tools.DateOptions | None
             로그 파일들을 기간별로 구분하고자 할 때 일, 주, 월, 연 단위 중 하나를 택하는 옵션.
             tools.DateOptions 클래스에 정의된 상수들.
@@ -765,34 +755,14 @@ class EasySetLogFileEnv(LogFileEnvironment):
             logging.INFO : '__info_log__',
         }
 
-        level_log_file_names 매개변수 입력 예시)
-
-        level_log_file_names = {
-            logging.DEBUG: 'debug',
-            logging.ERROR: 'error',
-        }
-
-        level_formatter_str 매개변수 입력 예시)
-
-        level_formatter_str = {
-            logging.DEBUG: '%(asctime)s - %(levelname)s - %(module)s \n%(message)s'
-            logging.ERROR: '%(asctime)s - %(levelname)s \n%(message)s',
-        }
-
         """
-        if os.path.isfile(toplevel_module_path):
+        if toplevel_module_path and os.path.isfile(toplevel_module_path):
             self.setTopLevelModulePath(toplevel_module_path)
 
-        if os.path.isdir(base_dir):
+        if base_dir and os.path.isdir(base_dir):
             self.setBaseDir(base_dir, base_dir_name)
 
         self.setLevelOption(level_option)
-        if level_log_file_names:
-            self.setLogFileNamesForEachLevels(level_log_file_names)
-        self.setCommonFormatter(common_formatter_str)
-        if level_formatter_str:
-            for lv, strf in level_formatter_str.items():
-                self.setLevelFormatter(lv, strf)
         
         if date_opt:
             self.setDate(date_opt)
@@ -1212,7 +1182,7 @@ class CustomizablePackageLogger():
             cls._this_instance = super().__new__(cls)
         return cls._this_instance
 
-    def __init__(self, logenv: EasySetLogFileEnv | LogFileEnvironment):
+    def __init__(self, logenv: EasySetLogFileEnv | LogFileEnvironment = None):
         """
         Parameters
         ----------
@@ -1221,6 +1191,7 @@ class CustomizablePackageLogger():
         
         """
         if not CustomizablePackageLogger._is_initialized:
+            if logenv is None: return
             self.logenv = logenv
             self._delimiter = '.'
             self._log_hier = _LoggerHierarchy()
@@ -1230,9 +1201,12 @@ class CustomizablePackageLogger():
             
             CustomizablePackageLogger._is_initialized = True
 
-    def setLogEnvObj(self, new_logenv: EasySetLogFileEnv | LogFileEnvironment):
-        """새 로그 환경 설정 클래스 EasySetLogFileEnv 또는 LogFileEnvironment의 인스턴스
-        를 대입하여 새 로그 환경으로 설정한다.
+    def setLogEnvObj(
+            self, 
+            new_logenv: EasySetLogFileEnv | LogFileEnvironment
+        ):
+        """새 로그 환경 설정 클래스 EasySetLogFileEnv 
+        또는 LogFileEnvironment의 인스턴스 를 대입하여 새 로그 환경으로 설정한다.
         """
         self.logenv = new_logenv
 

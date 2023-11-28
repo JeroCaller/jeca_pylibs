@@ -10,7 +10,7 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
-_LoggerPathTree, _LoggerHierarchy)
+_LoggerPathTree, _LoggerHierarchy, CustomizablePackageLogger)
 from logexc import LogLowestLevelError
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
@@ -220,6 +220,11 @@ class TestLoggerHierarchy(unittest.TestCase):
         logger3 = logging.getLogger('unittest.tlh')
         self.assertEqual(self.lh.getNumberofNodes(), current_num)
         self.assertIn('root.unittest.tlh', self.lh.getLeafLoggersName())
+
+
+class TestCusPackageLogger(unittest.TestCase):
+    def setUp(self):
+        ...
 
 
 if __name__ == '__main__':

@@ -57,7 +57,7 @@ class LogLowestLevelError(Exception):
         super().__init__(error_msg)
 
 
-class NotInitializedConfigError(Exception):
+class NotInitConfigError(Exception):
     """무언가를 초기 설정하지 않고 다른 기능 이용 시 발생시키는 예외."""
     def __init__(self, error_msg: str = ""):
         super().__init__(error_msg)
