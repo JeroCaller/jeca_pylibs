@@ -4,10 +4,12 @@
 import sys
 import os
 
-from dirimporttool import get_super_dir_directly
+from dirimporttool import get_super_dir_directly, get_current_absdir
 
 super_dir = get_super_dir_directly(__file__, 3)
 sys.path.append(super_dir)
+c_dir = get_current_absdir(__file__)
+sys.path.append(c_dir)
 
 from logpackage import (CustomizablePackageLogger, DetectErrorAndLog, 
 LogFuncEndPoint, EasySetLogFileEnv)

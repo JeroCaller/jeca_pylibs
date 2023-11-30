@@ -2,5 +2,5 @@ study/
 __pycache__
 *.log
 .vscode/
-logfiles/
+logfiles*/
 docs/

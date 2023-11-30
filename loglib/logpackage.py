@@ -181,10 +181,10 @@ class _LoggerPathTree(PathTree):
 
 
 class _LoggerHierarchy():
+    """현재 등록된 모든 로거 객체들의 이름을 
+    계층을 가진 트리로 보여주는 클래스.
+    """
     def __init__(self):
-        """현재 등록된 모든 로거 객체들의 이름을 
-        계층을 가진 트리로 보여주는 클래스. 
-        """
         self._root_logger = logging.getLogger()
         self._logger_dict: dict[str, logging.Logger] = {}
         self._ptree = _LoggerPathTree()
@@ -759,7 +759,7 @@ class EasySetLogFileEnv(LogFileEnvironment):
         if toplevel_module_path and os.path.isfile(toplevel_module_path):
             self.setTopLevelModulePath(toplevel_module_path)
 
-        if base_dir and os.path.isdir(base_dir):
+        if base_dir:
             self.setBaseDir(base_dir, base_dir_name)
 
         self.setLevelOption(level_option)

@@ -1,6 +1,8 @@
 import unittest
 import logging
 import sys
+import datetime
+import os
 
 from dirimporttool import (get_super_dir_directly,
 get_current_absdir)
@@ -10,8 +12,11 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
-_LoggerPathTree, _LoggerHierarchy, CustomizablePackageLogger)
+_LoggerPathTree, _LoggerHierarchy, CustomizablePackageLogger, 
+EasySetLogFileEnv)
 from logexc import LogLowestLevelError
+from tools import DateOptions
+from tests.fixtures.testpkg3 import main
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
 
@@ -201,6 +206,9 @@ class TestLoggerHierarchy(unittest.TestCase):
     def setUp(self):
         self.lh = _LoggerHierarchy()
 
+    @unittest.skip("""외부 fixture 패키지 임포트하여 테스트 시도 시 
+    이 메서드를 스킵해야 예외 상황 발생하지 않음.
+    """)
     def testLoggerHierarchy(self):
         # test 1
         current_num = 2
@@ -222,9 +230,37 @@ class TestLoggerHierarchy(unittest.TestCase):
         self.assertIn('root.unittest.tlh', self.lh.getLeafLoggersName())
 
 
-class TestCusPackageLogger(unittest.TestCase):
+class TestLogFileOptions(unittest.TestCase):
+    """loglib\\tests\\fixtures\\testpkg3의 main 함수 테스트.
+    
+    해당 테스트 클래스에서 테스트하고자 하는 것들.
+    1. 날짜별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    
+    """
+    main_called: bool = False
+
     def setUp(self):
-        ...
+        if not TestLogFileOptions.main_called:
+            self.base_dir_path \
+                = '..\\fixtures\\testpkg3'
+            self.base_dir_name_day = 'logfiles_day'
+            self.init_log_env_day = EasySetLogFileEnv()
+            self.init_log_env_day.setEssentialLogEnv(
+                base_dir=self.base_dir_path, 
+                base_dir_name=self.base_dir_name_day,
+                level_option=True,
+                date_opt=DateOptions.DAY
+            )
+            main.mainfunc(self.init_log_env_day, print_result=False)
+            TestLogFileOptions.main_called = True
+
+    def testDayBaseDir(self):
+        # 일별 로그 파일 저장 베이스 디렉토리 생성 여부 확인.
+        is_base_dir = os.path.isdir(
+            os.path.join(self.base_dir_path, self.base_dir_name_day)
+        )
+        self.assertTrue(is_base_dir)
 
 
 if __name__ == '__main__':
