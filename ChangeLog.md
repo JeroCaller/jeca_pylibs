@@ -1,6 +1,13 @@
 changelog
 ---
 - - -
+> 2023-12-01
+> - loglib
+>   - 단위 테스트 내 테스트 추가(향후 다른 테스트들도 추가 예정).
+>   - 단위 테스트 실행으로 발견한 버그 수정. (tools.Datetools.combineDateToGetDateStr)
+>   - 로그 파일들을 저장하는 베이스 디렉토리 내 로그 파일 및 날짜 
+디렉토리들을 조작, 관리하는 LogFileManager 클래스 생성 및 구조 설정.
+
 > 2023-11-30
 > - loglib
 >   - 독스트링 수정.

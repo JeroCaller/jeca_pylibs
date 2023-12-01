@@ -57,7 +57,12 @@ class DateTools():
             입력받은 날짜 숫자 정보들을 토대로 문자열로 반환.
         
         """
-        data = [str(a) for a in args]
+        data = []
+        for a in args:
+            if 0 <= a <= 9:
+                data.append('0' + str(a))
+            else:
+                data.append(str(a))
         return self.delimiter.join(data)
     
     def _getLastDayOfLastMonth(

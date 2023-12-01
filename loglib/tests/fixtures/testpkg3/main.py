@@ -3,7 +3,6 @@
 단위 테스트 모듈 test_logpackage.py에서 테스트하기 위한 용도.
 """
 import sys
-import os
 
 from dirimporttool import get_super_dir_directly, get_current_absdir
 
@@ -17,7 +16,6 @@ EasySetLogFileEnv)
 
 from pm import PlusMinus
 from subdir.md import MultiDivide
-
 
 main_pl = CustomizablePackageLogger(EasySetLogFileEnv())
 

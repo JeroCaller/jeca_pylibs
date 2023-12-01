@@ -230,8 +230,9 @@ class TestLoggerHierarchy(unittest.TestCase):
         self.assertIn('root.unittest.tlh', self.lh.getLeafLoggersName())
 
 
-class TestLogFileOptions(unittest.TestCase):
+class TestLogFileOptionsDay(unittest.TestCase):
     """loglib\\tests\\fixtures\\testpkg3의 main 함수 테스트.
+    day 모드만 테스트함.
     
     해당 테스트 클래스에서 테스트하고자 하는 것들.
     1. 날짜별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
@@ -239,28 +240,88 @@ class TestLogFileOptions(unittest.TestCase):
     
     """
     main_called: bool = False
+    main_error_mode_called: bool = False
+    all_in_one_and_error_mode_called: bool = False
+    all_in_one_mode_called: bool = False
 
     def setUp(self):
-        if not TestLogFileOptions.main_called:
-            self.base_dir_path \
-                = '..\\fixtures\\testpkg3'
-            self.base_dir_name_day = 'logfiles_day'
-            self.init_log_env_day = EasySetLogFileEnv()
-            self.init_log_env_day.setEssentialLogEnv(
-                base_dir=self.base_dir_path, 
-                base_dir_name=self.base_dir_name_day,
-                level_option=True,
-                date_opt=DateOptions.DAY
-            )
-            main.mainfunc(self.init_log_env_day, print_result=False)
-            TestLogFileOptions.main_called = True
-
-    def testDayBaseDir(self):
-        # 일별 로그 파일 저장 베이스 디렉토리 생성 여부 확인.
-        is_base_dir = os.path.isdir(
-            os.path.join(self.base_dir_path, self.base_dir_name_day)
+        self.base_dir_location \
+            = '..\\fixtures\\testpkg3'
+        self.base_dir_name_day = 'logfiles_day'
+        self.base_dir_path = os.path.join(
+            self.base_dir_location,
+            self.base_dir_name_day
         )
+        self.today_dir_path = os.path.join(
+            self.base_dir_path, datetime.date.today().isoformat()
+        )
+
+        self.init_log_env_day = EasySetLogFileEnv()
+        self.init_log_env_day.setEssentialLogEnv(
+            base_dir=self.base_dir_location,
+            base_dir_name=self.base_dir_name_day,
+            level_option=True,
+            date_opt=DateOptions.DAY
+        )
+        self.init_log_env_all_in_one = EasySetLogFileEnv()
+        self.init_log_env_all_in_one.setEssentialLogEnv(
+            base_dir=self.base_dir_location,
+            base_dir_name=self.base_dir_name_day,
+            level_option=False,
+            date_opt=DateOptions.DAY
+        )
+
+        # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
+        self.desc = self.shortDescription()
+        if self.desc == "error_log_mode":
+            if not TestLogFileOptionsDay.main_error_mode_called:
+                main.mainfunc(self.init_log_env_day, True, False)
+                TestLogFileOptionsDay.main_error_mode_called = True
+        elif self.desc == "all_in_one_mode":
+            if not TestLogFileOptionsDay.all_in_one_mode_called:
+                main.mainfunc(self.init_log_env_all_in_one, print_result=False)
+                TestLogFileOptionsDay.all_in_one_mode_called = True
+        elif self.desc == "all_in_one_and_error_log_mode":
+            if not TestLogFileOptionsDay.all_in_one_and_error_mode_called:
+                main.mainfunc(self.init_log_env_all_in_one, True, False)
+                TestLogFileOptionsDay.all_in_one_and_error_mode_called = True
+        else:
+            if not TestLogFileOptionsDay.main_called:
+                main.mainfunc(self.init_log_env_day, print_result=False)
+                TestLogFileOptionsDay.main_called = True
+
+    def testDayBaseDirExists(self):
+        """일별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
+        is_base_dir = os.path.isdir(self.base_dir_path)
         self.assertTrue(is_base_dir)
+
+    def testDayDirOfTodayExists(self):
+        """일별 로그 파일 저장용 디렉토리 형성 여부 확인.
+        (이 코드를 실행하는 오늘 날짜 기준)
+        """
+        today_date = datetime.date.today()
+        today_date = today_date.isoformat()
+        is_today_dir = os.path.isdir(
+            os.path.join(self.base_dir_path, today_date)
+        )
+        self.assertTrue(is_today_dir)
+
+    def testLevelLogFilesExist(self):
+        """오늘 날짜 디렉토리 내에 로그 수준별 로그 파일들이 
+        생성되는지 확인.
+        """
+        filename_list = [
+            'debug.log', 'error.log',
+            'info.log', 'logger_tree.log'
+        ]
+
+        def test_level_log_file(fnames: list[str]):
+            for f_name in fnames:
+                filepath = os.path.join(self.today_dir_path, f_name)
+                is_file = os.path.isfile(filepath)
+                self.assertTrue(is_file)
+
+        test_level_log_file(filename_list)
 
 
 if __name__ == '__main__':

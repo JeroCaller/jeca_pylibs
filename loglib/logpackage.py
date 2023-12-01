@@ -671,7 +671,7 @@ class LogFileEnvironment():
                 tools.DateOptions.DAY, True
             )
             log_file_name = '.'.join([log_file_name, 'log'])
-            target_file = os.path.join([date_dir, log_file_name])
+            target_file = os.path.join(date_dir, log_file_name)
 
             file_handler = logging.FileHandler(
                 filename=target_file,
@@ -1442,6 +1442,225 @@ class CustomizablePackageLogger():
         all_leaf = self.getCurrentAllLeafLoggers()
         all_leaf = '\n'.join(all_leaf)
         hierarchy_logger.info(f"{tree_str}\n\n{all_leaf}")
+
+
+class LogFileManager():
+    """로그 파일 및 디렉토리를 조작, 관리하는 기능의 클래스. 
+
+    이 클래스에서 진행되는 모든 작업은 로그 파일들을 하나로 모아 
+    관리하는 베이스 디렉토리 안에서만 진행된다.
+
+    추후 추가 예정 기능들.
+    1. 로그 파일들 중 원하는 로그 파일의 내용을 전부 지우는 기능. 
+    또는 날짜별 또는 베이스 디렉토리 내 모든 로그 파일 내 내용을 지우는 기능. 
+    (로그 파일 자체를 삭제하지는 않음.)
+    2. 특정 로그 파일 또는 날짜 디렉토리를 삭제하는 기능. 
+    또는 특정 디렉토리 또는 베이스 디렉토리 내 모든 내용물을 삭제하는 기능. 
+        - 오늘 날짜를 기준으로 특정 기간 이상 지난 날짜 디렉토리와 그 안의 
+        로그 파일들을 삭제하는 기능 추가 예정.
+    (베이스 디렉토리 자체를 삭제하는 기능도 추가 예정)
+    3. 베이스 디렉토리 내 로그 파일들을 zip 파일로 압축하는 기능.
+        - 날짜별로 구분되어 있는 경우, 여러 날짜 디렉토리 중 원하는 
+        날짜의 디렉토리와 그 안의 로그 파일들만 zip 파일로 압축하거나, 
+        베이스 디렉토리 내에 있는 모든 날짜별 디렉토리들을 압축하는 기능.
+
+    """
+    # 상수 정의
+    DELETE_MODE = 'delete'
+    ERASE_MODE = 'erase'
+
+    def __init__(self, base_dir_path: DirPath):
+        """
+        Parameters
+        ----------
+        base_dir_path: 로그 파일들을 하나로 모아 저장, 관리하고 있는 
+        베이스 디렉토리 경로.
+
+        """
+        self.base_dir_path = base_dir_path
+
+    def eraseAllInLogFile(
+            self, 
+            date_dirname: DirName | None,
+            logfile_name: FileName,
+            find_all_files: bool = False
+        ):
+        """특정 로그 파일 내 모든 로그 기록을 지우는 메서드.
+
+        Parameters
+        ---------
+        date_dirname : Dirname(str) | None
+            내용을 지우고자 하는 로그 파일이 날짜 디렉토리 안에 
+            있을 경우 해당 디렉토리명을 문자열로 입력. 
+            만약 해당 로그 파일이 날짜 디렉토리 안이 아닌 
+            베이스 디렉토리에 존재한다면 None을 입력.
+        logfile_name : FileName(str)
+            내용을 지우고자 하는 로그 파일 이름.
+        find_all_files : bool, default False
+            logfile_name 매개변수 값과 동일한 파일명을 가지는 
+            모든 로그 파일들을 찾아 내용을 지울지 결정하는 메서드. 
+            True시 베이스 디렉토리 내 logfile_name과 같은 파일명을 
+            가지는 모든 로그 파일들에 대해 내용 삭제 작업이 진행되며, 
+            이는 date_dirname 매개변수에 지정된 값과 상관없이 진행된다. 
+            False시 지정된 위치의 로그 파일에만 내용 삭제 작업을 진행한다. 
+            date_dirname에 지정된 디렉토리 내 로그 파일의 내용만 지우고, 만약 
+            해당 매개변수가 None이면 베이스 디렉토리 내에 있는 해당 로그 
+            파일을 찾아 해당 파일에만 작업 수행.
+        
+        """
+        ...
+
+    def eraseAllInDateDir(
+            self,
+            date_dirname: DirName
+        ):
+        """특정 날짜 디렉토리 내 모든 로그 파일 내 내용들을 전부 지운다.
+
+        Parameters
+        ----------
+        date_dirname: DirName(str)
+
+        """
+        ...
+
+    def deleteLogFile(
+            self,
+            date_dirname: DirName | None,
+            logfile_name: FileName,
+            find_all_files: bool = False
+        ):
+        """특정 로그 파일을 삭제한다. 
+
+        Parameters
+        ----------
+        date_dirname : DirName(str) | None
+            삭제하고자 하는 로그 파일이 날짜 디렉토리 안에 있는 경우, 
+            해당 날짜 디렉토리명을 문자열로 입력. 만약 로그 파일이 
+            날짜 디렉토리가 아닌 베이스 디렉토리 내에 있는 경우 None을 
+            입력.
+        logfile_name : FileName(str)
+            삭제하고자 하는 로그 파일명.
+        find_all_files : bool, default False
+            True시 date_dirname 매개변수에 지정한 날짜 디렉토리에 상관없이 
+            베이스 디렉토리 내 logfile_name 매개변수에 지정된 로그 파일명을 
+            가지는 모든 로그 파일들에 대해 삭제 작업을 진행한다. 
+            False시 지정된 로그 파일만 지운다. date_dirname 매개변수에 
+            지정된 날짜 디렉토리 내의 logfile_name 매개변수로 지정된 
+            로그 파일만을 지우고, 만약 date_dirname이 None일 경우 베이스 
+            디렉토리에서 해당 로그 파일을 찾아 지운다. 
+        
+        """
+        ...
+
+    def deleteAllInDateDir(
+            self,
+            date_dirname: DirName,
+            delete_dir: bool = False
+        ):
+        """특정 날짜 디렉토리 내 모든 로그 파일들을 삭제한다. 
+
+        Parameters
+        ----------
+        date_dirname : DirName(str)
+            그 안의 로그 파일들을 모두 삭제할 날짜 디렉토리명을 문자열로 대입.
+        delete_dir : bool, default False
+            date_dirname 매개변수로 지정된 디렉토리 내 모든 로그 파일들을 
+            삭제하고나서 해당 디렉토리 자체도 지울지 결정하는 매개변수.
+            True시 해당 디렉토리 자체도 삭제하고, False시 해당 디렉토리는 
+            삭제하지 않고 남긴다.
+        
+        """
+        ...
+
+    def deleteBaseDir(self):
+        """지정된 베이스 디렉토리와 그 내부의 모든 로그 파일, 날짜 디렉토리들을 
+        모두 삭제한다. 
+        """
+        ...
+
+    def setTimeInterval(
+            self,
+            datetype: tools.DateOptions.DateType,
+            date_interval: int,
+            mode: str
+        ):
+        """특정 기간 이상 지난 로그 파일 디렉토리들을 삭제하거나 
+        해당 디렉토리 내의 로그 파일의 내용만을 지우는 기능의 메서드.
+        이 메서드를 실행하는 날짜를 기준으로 한다. 
+
+        Parameters
+        ----------
+        datetype : tools.DateOptions.DateType
+            일, 월, 년, 주별 중 하나를 선택.
+        date_interval : int
+            기간 선택. datetype에 맞춰 작성.
+        mode : LogFileManager.DELETE_MODE | LogFileManager.ERASE_MODE
+            삭제할 것인지 내용만 지울 것인지 선택하는 매개변수. 
+            이 클래스 LogFileManager에 정의된 클래스 상수 DELETE_MODE, 
+            ERASE_MODE들 중 하나를 선택하여 대입.
+        
+        """
+        # 만약 베이스 디렉토리 내에 날짜별 디렉토리는 없고 로그 파일만 
+        # 있는 경우에도 똑같이 수행되도록 할 예정.
+        # 기간 정보는 json 파일에 저장하여 활용할 예정.
+        ...
+
+    def resetTimeInterval(self):
+        """setTimeInterval() 메서드를 통해 기간 설정한 것을 무효화한다."""
+        ...
+
+    def zipDateDir(
+            self,
+            date_dir: DirName,
+            left_original: bool
+        ):
+        """특정 날짜 디렉토리를 zip파일로 압축한다. 
+
+        zip파일은 지정된 베이스 디렉토리 안에 저장된다.
+
+        Parameters
+        ----------
+        date_dir : DirName(str)
+            압축할 날짜 디렉토리
+        left_original : bool
+            zip파일로 압축한 이후, 원본 날짜 디렉토리를 남길지를 결정하는 매개변수.
+            True시 원본 날짜 디렉토리를 남긴다.
+            False시 원본 날짜 디렉토리를 삭제한다. 
+        
+        """
+        ...
+    
+    def zipAllDateDir(
+            self,
+            separate: bool,
+            left_original: bool
+        ):
+        """지정된 베이스 디렉토리 내 모든 날짜 디렉토리들을 
+        zip 파일로 압축한다. 
+
+        해당 zip파일들은 지정된 베이스 디렉토리 내에 저장된다.
+        
+        날짜 디렉토리가 아닌 개별 파일로 베이스 디렉토리에 저장된 로그 
+        파일들도 자동으로 압축해준다. 
+
+        Parameters
+        ----------
+        separate : bool
+            지정된 베이스 디렉토리 내 모든 날짜 디렉토리들을 zip파일로 
+            압축할 떄, 날짜별로 따로따로 zip파일로 압축할지, 아니면 모든 
+            날짜 디렉토리들을 하나의 zip파일로 압축할지를 결정하는 매개변수.
+            True시 날짜별로 나눠서 zip파일로 압축.
+            False시 모든 날짜 디렉토리를 하나로 모아 하나의 zip파일로 압축.
+            베이스 디렉토리에 있는 개별 로그 파일들은 해당 매개변수 값에 상관없이
+            모두 하나의 zip파일로 압축된다. 날짜 디렉토리들과 섞여 있는 경우, 
+            날짜 디렉토리와는 구별되어 압축된다.
+        left_original : bool
+            zip파일로 압축한 뒤, 원본 디렉토리들을 그대로 남길지 결정하는 매개변수.
+            True시 원본 디렉토리 및 로그 파일들을 그대로 남긴다.
+            False시 원본 디렉토리 및 로그 파일들은 모두 삭제한다.
+        
+        """
+        ...
 
 
 if __name__ == '__main__':
