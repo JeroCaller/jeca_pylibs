@@ -15,7 +15,7 @@ from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
 _LoggerPathTree, _LoggerHierarchy, CustomizablePackageLogger, 
 EasySetLogFileEnv)
 from logexc import LogLowestLevelError
-from tools import DateOptions
+from tools import DateOptions, DateTools
 from tests.fixtures.testpkg3 import main
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
@@ -230,8 +230,75 @@ class TestLoggerHierarchy(unittest.TestCase):
         self.assertIn('root.unittest.tlh', self.lh.getLeafLoggersName())
 
 
+class InitLogFileOpt():
+    def __init__(
+            self, 
+            dateopt: DateOptions
+        ):
+        self.base_dir_location = '..\\fixtures\\testpkg3'
+        if dateopt == DateOptions.DAY:
+            self.base_dir_name_date = 'logfiles_day'
+        elif dateopt == DateOptions.WEEK:
+            self.base_dir_name_date = 'logfiles_week'
+        elif dateopt == DateOptions.MONTH:
+            self.base_dir_name_date = 'logfiles_month'
+        elif dateopt == DateOptions.YEAR:
+            self.base_dir_name_date = 'logfiles_year'
+        else:
+            self.base_dir_name_date = ''
+        self.base_dir_path = os.path.join(
+            self.base_dir_location, self.base_dir_name_date
+        )
+        self.today_dir_path = os.path.join(
+            self.base_dir_path,
+            DateTools().getDateStr(dateopt, True)
+        )
+
+        self.init_log_env = EasySetLogFileEnv()
+        self.init_log_env.setEssentialLogEnv(
+            base_dir=self.base_dir_location,
+            base_dir_name=self.base_dir_name_date,
+            level_option=True,
+            date_opt=dateopt
+        )
+        self.init_log_env_all_in_one = EasySetLogFileEnv()
+        self.init_log_env_all_in_one.setEssentialLogEnv(
+            base_dir=self.base_dir_location,
+            base_dir_name=self.base_dir_name_date,
+            level_option=False,
+            date_opt=dateopt
+        )
+
+    def setupForPrevMultiLogs(
+            self,
+            test_classname: unittest.TestCase,
+            short_desc: unittest.TestCase.shortDescription
+        ):
+        if short_desc == 'error_log_mode':
+            if not test_classname.main_error_mode_called:
+                main.mainfunc(self.init_log_env, True, False)
+                test_classname.main_error_mode_called = True
+        elif short_desc == 'all_in_one_mode':
+            if not test_classname.all_in_one_mode_called:
+                main.mainfunc(
+                    self.init_log_env_all_in_one, 
+                    print_result=False
+                )
+                test_classname.all_in_one_mode_called = True
+        elif short_desc == 'all_in_one_and_error_log_mode':
+            if not test_classname.all_in_one_and_error_mode_called:
+                main.mainfunc(
+                    self.init_log_env_all_in_one, True, False
+                )
+                test_classname.all_in_one_and_error_mode_called = True
+        else:
+            if not test_classname.main_called:
+                main.mainfunc(self.init_log_env, print_result=False)
+                test_classname.main_called = True
+
+
 class TestLogFileOptionsDay(unittest.TestCase):
-    """loglib\\tests\\fixtures\\testpkg3의 main 함수 테스트.
+    """loglib\\tests\\fixtures\\testpkg3의 mainfunc 함수 테스트.
     day 모드만 테스트함.
     
     해당 테스트 클래스에서 테스트하고자 하는 것들.
@@ -245,54 +312,18 @@ class TestLogFileOptionsDay(unittest.TestCase):
     all_in_one_mode_called: bool = False
 
     def setUp(self):
-        self.base_dir_location \
-            = '..\\fixtures\\testpkg3'
-        self.base_dir_name_day = 'logfiles_day'
-        self.base_dir_path = os.path.join(
-            self.base_dir_location,
-            self.base_dir_name_day
-        )
-        self.today_dir_path = os.path.join(
-            self.base_dir_path, datetime.date.today().isoformat()
-        )
-
-        self.init_log_env_day = EasySetLogFileEnv()
-        self.init_log_env_day.setEssentialLogEnv(
-            base_dir=self.base_dir_location,
-            base_dir_name=self.base_dir_name_day,
-            level_option=True,
-            date_opt=DateOptions.DAY
-        )
-        self.init_log_env_all_in_one = EasySetLogFileEnv()
-        self.init_log_env_all_in_one.setEssentialLogEnv(
-            base_dir=self.base_dir_location,
-            base_dir_name=self.base_dir_name_day,
-            level_option=False,
-            date_opt=DateOptions.DAY
-        )
+        self.initsetup = InitLogFileOpt(DateOptions.DAY)
 
         # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
         self.desc = self.shortDescription()
-        if self.desc == "error_log_mode":
-            if not TestLogFileOptionsDay.main_error_mode_called:
-                main.mainfunc(self.init_log_env_day, True, False)
-                TestLogFileOptionsDay.main_error_mode_called = True
-        elif self.desc == "all_in_one_mode":
-            if not TestLogFileOptionsDay.all_in_one_mode_called:
-                main.mainfunc(self.init_log_env_all_in_one, print_result=False)
-                TestLogFileOptionsDay.all_in_one_mode_called = True
-        elif self.desc == "all_in_one_and_error_log_mode":
-            if not TestLogFileOptionsDay.all_in_one_and_error_mode_called:
-                main.mainfunc(self.init_log_env_all_in_one, True, False)
-                TestLogFileOptionsDay.all_in_one_and_error_mode_called = True
-        else:
-            if not TestLogFileOptionsDay.main_called:
-                main.mainfunc(self.init_log_env_day, print_result=False)
-                TestLogFileOptionsDay.main_called = True
+        self.initsetup.setupForPrevMultiLogs(
+            TestLogFileOptionsDay,
+            self.desc
+        )
 
     def testDayBaseDirExists(self):
         """일별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
-        is_base_dir = os.path.isdir(self.base_dir_path)
+        is_base_dir = os.path.isdir(self.initsetup.base_dir_path)
         self.assertTrue(is_base_dir)
 
     def testDayDirOfTodayExists(self):
@@ -302,7 +333,7 @@ class TestLogFileOptionsDay(unittest.TestCase):
         today_date = datetime.date.today()
         today_date = today_date.isoformat()
         is_today_dir = os.path.isdir(
-            os.path.join(self.base_dir_path, today_date)
+            os.path.join(self.initsetup.base_dir_path, today_date)
         )
         self.assertTrue(is_today_dir)
 
@@ -317,11 +348,394 @@ class TestLogFileOptionsDay(unittest.TestCase):
 
         def test_level_log_file(fnames: list[str]):
             for f_name in fnames:
-                filepath = os.path.join(self.today_dir_path, f_name)
+                filepath = os.path.join(self.initsetup.today_dir_path, f_name)
                 is_file = os.path.isfile(filepath)
                 self.assertTrue(is_file)
 
         test_level_log_file(filename_list)
+
+    def testDebugLogFile(self):
+        """디버그 파일에 로깅이 되었는지 확인하는 테스트."""
+        debug_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'debug.log'
+        )
+        with open(debug_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        debug_level = logging.getLevelName(logging.DEBUG)
+        self.assertIn(today, log_data[0])
+        self.assertIn(debug_level, log_data[0])
+        self.assertIn('variable', log_data[2])
+
+    def testLoggerTreeLogFile(self):
+        """logger_tree.log 파일에 로깅이 되었는지 테스트."""
+        logger_tree_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'logger_tree.log'
+        )
+        with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('root', log_data[1])
+
+    @unittest.skip('')
+    def testErrorLogFile(self):
+        """error_log_mode
+
+        에러 발생 시 에러가 로깅되는지 확인하는 테스트.
+        """
+        error_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'error.log'
+        )
+        with open(error_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.ERROR)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('division by zero', log_data[1])
+
+    def testInfoLogFile(self):
+        """Info 로깅 여부 확인 테스트."""
+        info_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'info.log'
+        )
+        with open(info_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('mainfunc', log_data[1])
+
+
+class TestLogFileOptWeek(unittest.TestCase):
+    """loglib\\tests\\fixtures\\testpkg3의 mainfunc 함수 테스트.
+    week 모드만 테스트함.
+
+    해당 테스트 클래스에서 테스트하고자 하는 것들.
+    1. 주별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    """
+    main_called: bool = False
+    main_error_mode_called: bool = False
+    all_in_one_and_error_mode_called: bool = False
+    all_in_one_mode_called: bool = False
+
+    def setUp(self):
+        self.initsetup = InitLogFileOpt(DateOptions.WEEK)
+
+        # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
+        self.desc = self.shortDescription()
+        self.initsetup.setupForPrevMultiLogs(
+            TestLogFileOptWeek,
+            self.desc
+        )
+
+    def testWeekBaseDirExists(self):
+        """주별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
+        is_base_dir = os.path.isdir(self.initsetup.base_dir_path)
+        self.assertTrue(is_base_dir)
+
+    def testWeekDirOfTodayExists(self):
+        """일별 로그 파일 저장용 디렉토리 형성 여부 확인.
+        (이 코드를 실행하는 오늘 날짜 기준)
+        """
+        is_today_dir = os.path.isdir(self.initsetup.today_dir_path)
+        self.assertTrue(is_today_dir)
+
+    def testLevelLogFilesExist(self):
+        """오늘 날짜 디렉토리 내에 로그 수준별 로그 파일들이 
+        생성되는지 확인.
+        """
+        filename_list = [
+            'debug.log', 'error.log',
+            'info.log', 'logger_tree.log'
+        ]
+
+        def test_level_log_file(fnames: list[str]):
+            for f_name in fnames:
+                filepath = os.path.join(self.initsetup.today_dir_path, f_name)
+                is_file = os.path.isfile(filepath)
+                self.assertTrue(is_file)
+
+        test_level_log_file(filename_list)
+
+    def testDebugLogFile(self):
+        """디버그 파일에 로깅이 되었는지 확인하는 테스트."""
+        debug_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'debug.log'
+        )
+        with open(debug_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        debug_level = logging.getLevelName(logging.DEBUG)
+        self.assertIn(today, log_data[0])
+        self.assertIn(debug_level, log_data[0])
+        self.assertIn('variable', log_data[2])
+
+    def testLoggerTreeLogFile(self):
+        """logger_tree.log 파일에 로깅이 되었는지 테스트."""
+        logger_tree_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'logger_tree.log'
+        )
+        with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('root', log_data[1])
+
+    @unittest.skip('')
+    def testErrorLogFile(self):
+        """error_log_mode
+
+        에러 발생 시 에러가 로깅되는지 확인하는 테스트.
+        """
+        error_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'error.log'
+        )
+        with open(error_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.ERROR)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('division by zero', log_data[1])
+
+    def testInfoLogFile(self):
+        """Info 로깅 여부 확인 테스트."""
+        info_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'info.log'
+        )
+        with open(info_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('mainfunc', log_data[1])
+
+
+class TestLogFileOptMonth(unittest.TestCase):
+    """loglib\\tests\\fixtures\\testpkg3의 mainfunc 함수 테스트.
+    month 모드만 테스트함.
+
+    해당 테스트 클래스에서 테스트하고자 하는 것들.
+    1. 월별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    """
+    main_called: bool = False
+    main_error_mode_called: bool = False
+    all_in_one_and_error_mode_called: bool = False
+    all_in_one_mode_called: bool = False
+
+    def setUp(self):
+        self.initsetup = InitLogFileOpt(DateOptions.MONTH)
+
+        # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
+        self.desc = self.shortDescription()
+        self.initsetup.setupForPrevMultiLogs(
+            TestLogFileOptMonth,
+            self.desc
+        )
+
+    def testMonthBaseDirExists(self):
+        """월별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
+        is_base_dir = os.path.isdir(self.initsetup.base_dir_path)
+        self.assertTrue(is_base_dir)
+
+    def testMonthDirOfTodayExists(self):
+        """월별 로그 파일 저장용 디렉토리 형성 여부 확인.
+        (이 코드를 실행하는 오늘 날짜 기준)
+        """
+        is_today_dir = os.path.isdir(self.initsetup.today_dir_path)
+        self.assertTrue(is_today_dir)
+
+    def testLevelLogFilesExist(self):
+        """오늘 날짜 디렉토리 내에 로그 수준별 로그 파일들이 
+        생성되는지 확인.
+        """
+        filename_list = [
+            'debug.log', 'error.log',
+            'info.log', 'logger_tree.log'
+        ]
+
+        def test_level_log_file(fnames: list[str]):
+            for f_name in fnames:
+                filepath = os.path.join(self.initsetup.today_dir_path, f_name)
+                is_file = os.path.isfile(filepath)
+                self.assertTrue(is_file)
+
+        test_level_log_file(filename_list)
+
+    def testDebugLogFile(self):
+        """디버그 파일에 로깅이 되었는지 확인하는 테스트."""
+        debug_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'debug.log'
+        )
+        with open(debug_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        debug_level = logging.getLevelName(logging.DEBUG)
+        self.assertIn(today, log_data[0])
+        self.assertIn(debug_level, log_data[0])
+        self.assertIn('variable', log_data[2])
+
+    def testLoggerTreeLogFile(self):
+        """logger_tree.log 파일에 로깅이 되었는지 테스트."""
+        logger_tree_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'logger_tree.log'
+        )
+        with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('root', log_data[1])
+
+    @unittest.skip('')
+    def testErrorLogFile(self):
+        """error_log_mode
+
+        에러 발생 시 에러가 로깅되는지 확인하는 테스트.
+        """
+        error_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'error.log'
+        )
+        with open(error_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.ERROR)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('division by zero', log_data[1])
+
+    def testInfoLogFile(self):
+        """Info 로깅 여부 확인 테스트."""
+        info_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'info.log'
+        )
+        with open(info_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('mainfunc', log_data[1])
+
+
+class TestLogFileOptYear(unittest.TestCase):
+    """loglib\\tests\\fixtures\\testpkg3의 mainfunc 함수 테스트.
+    year 모드만 테스트함.
+
+    해당 테스트 클래스에서 테스트하고자 하는 것들.
+    1. 연별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
+    """
+    main_called: bool = False
+    main_error_mode_called: bool = False
+    all_in_one_and_error_mode_called: bool = False
+    all_in_one_mode_called: bool = False
+
+    def setUp(self):
+        self.initsetup = InitLogFileOpt(DateOptions.YEAR)
+
+        # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
+        self.desc = self.shortDescription()
+        self.initsetup.setupForPrevMultiLogs(
+            TestLogFileOptYear,
+            self.desc
+        )
+
+    def testYearBaseDirExists(self):
+        """연별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
+        is_base_dir = os.path.isdir(self.initsetup.base_dir_path)
+        self.assertTrue(is_base_dir)
+
+    def testYearDirOfTodayExists(self):
+        """연별 로그 파일 저장용 디렉토리 형성 여부 확인.
+        (이 코드를 실행하는 오늘 날짜 기준)
+        """
+        is_today_dir = os.path.isdir(self.initsetup.today_dir_path)
+        self.assertTrue(is_today_dir)
+
+    def testLevelLogFilesExist(self):
+        """오늘 날짜 디렉토리 내에 로그 수준별 로그 파일들이 
+        생성되는지 확인.
+        """
+        filename_list = [
+            'debug.log', 'error.log',
+            'info.log', 'logger_tree.log'
+        ]
+
+        def test_level_log_file(fnames: list[str]):
+            for f_name in fnames:
+                filepath = os.path.join(self.initsetup.today_dir_path, f_name)
+                is_file = os.path.isfile(filepath)
+                self.assertTrue(is_file)
+
+        test_level_log_file(filename_list)
+
+    def testDebugLogFile(self):
+        """디버그 파일에 로깅이 되었는지 확인하는 테스트."""
+        debug_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'debug.log'
+        )
+        with open(debug_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        debug_level = logging.getLevelName(logging.DEBUG)
+        self.assertIn(today, log_data[0])
+        self.assertIn(debug_level, log_data[0])
+        self.assertIn('variable', log_data[2])
+
+    def testLoggerTreeLogFile(self):
+        """logger_tree.log 파일에 로깅이 되었는지 테스트."""
+        logger_tree_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'logger_tree.log'
+        )
+        with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('root', log_data[1])
+
+    @unittest.skip('')
+    def testErrorLogFile(self):
+        """error_log_mode
+
+        에러 발생 시 에러가 로깅되는지 확인하는 테스트.
+        """
+        error_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'error.log'
+        )
+        with open(error_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.ERROR)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('division by zero', log_data[1])
+
+    def testInfoLogFile(self):
+        """Info 로깅 여부 확인 테스트."""
+        info_filepath = os.path.join(
+            self.initsetup.today_dir_path, 'info.log'
+        )
+        with open(info_filepath, 'r', encoding='utf-8') as f:
+            log_data = f.readlines()
+        today = datetime.date.today().isoformat()
+        levelname = logging.getLevelName(logging.INFO)
+        self.assertIn(today, log_data[0])
+        self.assertIn(levelname, log_data[0])
+        self.assertIn('mainfunc', log_data[1])
 
 
 if __name__ == '__main__':
@@ -332,7 +746,18 @@ if __name__ == '__main__':
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
 
+    def test_only_one_logopt_date(test_classname):
+        suite_obj = unittest.TestSuite()
+        suite_obj.addTest(unittest.makeSuite(test_classname))
+
+        runner = unittest.TextTestRunner()
+        runner.run(suite_obj)
+
     # 다음 코드들 중 한 줄만 택해 주석해제하여 테스트.
     # (원한다면 모든 코드를 주석 해제하여 테스트해도 됨.)
     #test_only_logger_hierarchy()
-    unittest.main()
+    #unittest.main()
+    #test_only_one_logopt_date(TestLogFileOptionsDay)
+    #test_only_one_logopt_date(TestLogFileOptWeek)
+    #test_only_one_logopt_date(TestLogFileOptMonth)
+    test_only_one_logopt_date(TestLogFileOptYear)

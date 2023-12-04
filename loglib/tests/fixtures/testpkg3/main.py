@@ -12,13 +12,18 @@ c_dir = get_current_absdir(__file__)
 sys.path.append(c_dir)
 
 from logpackage import (CustomizablePackageLogger, 
-EasySetLogFileEnv)
+EasySetLogFileEnv, LogFuncEndPoint, DetectErrorAndLog)
 
 from pm import PlusMinus
 from subdir.md import MultiDivide
 
 main_pl = CustomizablePackageLogger(EasySetLogFileEnv())
 
+error_logger = main_pl.getErrorLogger(__file__)
+program_start_end_logger = main_pl.getInfoLogger('program_start_end_logger')
+
+@DetectErrorAndLog(error_logger)
+@LogFuncEndPoint(program_start_end_logger)
 def mainfunc(
         log_env_obj: EasySetLogFileEnv, 
         raise_error_log: bool = False,
@@ -44,7 +49,9 @@ def mainfunc(
 
     pm_obj = PlusMinus(pm_numset[0], pm_numset[1])
     md_obj = MultiDivide(md_numset[0], md_numset[1])
-    expected_error_obj = MultiDivide(expected_error_num_set[0], expected_error_num_set[1])
+    expected_error_obj = MultiDivide(
+        expected_error_num_set[0], expected_error_num_set[1]
+    )
 
     pm_result = (pm_obj.getSumResult(2), pm_obj.getSubtractResult(1))
     md_result = (md_obj.getMultipliedResult(3), md_obj.getDividedResult(4))

@@ -1,6 +1,13 @@
 changelog
 ---
 - - -
+> 2023-12-04
+> - loglib
+>   - 단위 테스트 내 테스트 추가(일, 주, 월, 연별 및 로그 수준별 로깅 테스트)
+>   - 단위 테스트를 위한 fixture에 코드 추가.
+>   - 추가한 단위 테스트 모두 테스트 통과.
+>   - logpackage.py의 LogFileEnvironment 클래스의 common formatter 형식 수정.
+
 > 2023-12-01
 > - loglib
 >   - 단위 테스트 내 테스트 추가(향후 다른 테스트들도 추가 예정).

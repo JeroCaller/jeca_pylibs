@@ -302,7 +302,7 @@ class LogFileEnvironment():
 
         self.default_common_formatter \
             = logging.Formatter(
-            "%(asctime)s - %(levelname)s - %(module)s \n%(message)s"
+            "%(asctime)s - %(levelname)s\n%(message)s"
             )
         self.common_formatter: logging.Formatter \
             = self.default_common_formatter
