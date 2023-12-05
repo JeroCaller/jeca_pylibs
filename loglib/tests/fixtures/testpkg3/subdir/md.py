@@ -1,6 +1,7 @@
-from logpackage import CustomizablePackageLogger
+from logpackage import CustomizablePackageLogger, LogFuncEndPoint
 
 collector = CustomizablePackageLogger()
+program_start_end_logger = collector.getInfoLogger('program_start_end_logger')
 
 
 class MultiDivide:
@@ -12,13 +13,15 @@ class MultiDivide:
         self.num2 = num2
         collector.logVariable('num1')
 
+    @LogFuncEndPoint(program_start_end_logger)
     def getMultipliedResult(self, additional_num: int = 0):
         total = 1
         total *= self.num1 * self.num2
         self.num1 += additional_num
         collector.logVariable('num1')
         return total
-
+    
+    @LogFuncEndPoint(program_start_end_logger)
     def getDividedResult(self, additional_num: int = 0):
         total = 1
         total = self.num1 / self.num2

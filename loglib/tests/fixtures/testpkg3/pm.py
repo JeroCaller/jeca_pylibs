@@ -5,10 +5,10 @@ from dirimporttool import get_super_dir_directly
 super_dir = get_super_dir_directly(__file__, 3)
 sys.path.append(super_dir)
 
-from logpackage import CustomizablePackageLogger
+from logpackage import CustomizablePackageLogger, LogFuncEndPoint
 
 collector = CustomizablePackageLogger()
-
+program_start_end_logger = collector.getInfoLogger('program_start_end_logger')
 
 class PlusMinus():
     def __init__(self, num1: int, num2: int):
@@ -19,13 +19,15 @@ class PlusMinus():
         self.num2 = num2
         collector.logVariable('num2')
 
+    @LogFuncEndPoint(program_start_end_logger)
     def getSumResult(self, additional_num: int = 0):
         total = 0
         total += self.num1 + self.num2
         self.num2 += additional_num
         collector.logVariable('num2')
         return total
-
+    
+    @LogFuncEndPoint(program_start_end_logger)
     def getSubtractResult(self, additional_num: int = 0):
         total = 0
         total = self.num1 - self.num2

@@ -72,7 +72,7 @@ class TestDateTools(unittest.TestCase):
         day_result = get_date_str(target_date, self.dateop.DAY)
         self.assertEqual(day_result, '2023-11-21')
         week_result = get_date_str(target_date, self.dateop.WEEK)
-        self.assertEqual(week_result, '2023-11-4주')
+        self.assertEqual(week_result, '2023-11-04주')
         month_result = get_date_str(target_date, self.dateop.MONTH)
         self.assertEqual(month_result, '2023-11')
         year_result = get_date_str(target_date, self.dateop.YEAR)

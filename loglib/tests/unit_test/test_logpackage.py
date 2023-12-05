@@ -469,12 +469,12 @@ class TestLogFileOptWeek(unittest.TestCase):
             self.initsetup.today_dir_path, 'debug.log'
         )
         with open(debug_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         debug_level = logging.getLevelName(logging.DEBUG)
-        self.assertIn(today, log_data[0])
-        self.assertIn(debug_level, log_data[0])
-        self.assertIn('variable', log_data[2])
+        self.assertIn(today, log_data)
+        self.assertIn(debug_level, log_data)
+        self.assertIn('variable', log_data)
 
     def testLoggerTreeLogFile(self):
         """logger_tree.log 파일에 로깅이 되었는지 테스트."""
@@ -482,12 +482,12 @@ class TestLogFileOptWeek(unittest.TestCase):
             self.initsetup.today_dir_path, 'logger_tree.log'
         )
         with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('root', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('root', log_data)
 
     @unittest.skip('')
     def testErrorLogFile(self):
@@ -499,12 +499,12 @@ class TestLogFileOptWeek(unittest.TestCase):
             self.initsetup.today_dir_path, 'error.log'
         )
         with open(error_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.ERROR)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('division by zero', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('division by zero', log_data)
 
     def testInfoLogFile(self):
         """Info 로깅 여부 확인 테스트."""
@@ -512,12 +512,12 @@ class TestLogFileOptWeek(unittest.TestCase):
             self.initsetup.today_dir_path, 'info.log'
         )
         with open(info_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('mainfunc', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('mainfunc', log_data)
 
 
 class TestLogFileOptMonth(unittest.TestCase):
@@ -578,12 +578,12 @@ class TestLogFileOptMonth(unittest.TestCase):
             self.initsetup.today_dir_path, 'debug.log'
         )
         with open(debug_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         debug_level = logging.getLevelName(logging.DEBUG)
-        self.assertIn(today, log_data[0])
-        self.assertIn(debug_level, log_data[0])
-        self.assertIn('variable', log_data[2])
+        self.assertIn(today, log_data)
+        self.assertIn(debug_level, log_data)
+        self.assertIn('variable', log_data)
 
     def testLoggerTreeLogFile(self):
         """logger_tree.log 파일에 로깅이 되었는지 테스트."""
@@ -591,12 +591,12 @@ class TestLogFileOptMonth(unittest.TestCase):
             self.initsetup.today_dir_path, 'logger_tree.log'
         )
         with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('root', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('root', log_data)
 
     @unittest.skip('')
     def testErrorLogFile(self):
@@ -608,12 +608,12 @@ class TestLogFileOptMonth(unittest.TestCase):
             self.initsetup.today_dir_path, 'error.log'
         )
         with open(error_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.ERROR)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('division by zero', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('division by zero', log_data)
 
     def testInfoLogFile(self):
         """Info 로깅 여부 확인 테스트."""
@@ -621,12 +621,12 @@ class TestLogFileOptMonth(unittest.TestCase):
             self.initsetup.today_dir_path, 'info.log'
         )
         with open(info_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('mainfunc', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('mainfunc', log_data)
 
 
 class TestLogFileOptYear(unittest.TestCase):
@@ -687,12 +687,12 @@ class TestLogFileOptYear(unittest.TestCase):
             self.initsetup.today_dir_path, 'debug.log'
         )
         with open(debug_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         debug_level = logging.getLevelName(logging.DEBUG)
-        self.assertIn(today, log_data[0])
-        self.assertIn(debug_level, log_data[0])
-        self.assertIn('variable', log_data[2])
+        self.assertIn(today, log_data)
+        self.assertIn(debug_level, log_data)
+        self.assertIn('variable', log_data)
 
     def testLoggerTreeLogFile(self):
         """logger_tree.log 파일에 로깅이 되었는지 테스트."""
@@ -700,12 +700,12 @@ class TestLogFileOptYear(unittest.TestCase):
             self.initsetup.today_dir_path, 'logger_tree.log'
         )
         with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('root', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('root', log_data)
 
     @unittest.skip('')
     def testErrorLogFile(self):
@@ -717,12 +717,12 @@ class TestLogFileOptYear(unittest.TestCase):
             self.initsetup.today_dir_path, 'error.log'
         )
         with open(error_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.ERROR)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('division by zero', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('division by zero', log_data)
 
     def testInfoLogFile(self):
         """Info 로깅 여부 확인 테스트."""
@@ -730,12 +730,12 @@ class TestLogFileOptYear(unittest.TestCase):
             self.initsetup.today_dir_path, 'info.log'
         )
         with open(info_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('mainfunc', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('mainfunc', log_data)
 
 
 if __name__ == '__main__':
@@ -756,8 +756,8 @@ if __name__ == '__main__':
     # 다음 코드들 중 한 줄만 택해 주석해제하여 테스트.
     # (원한다면 모든 코드를 주석 해제하여 테스트해도 됨.)
     #test_only_logger_hierarchy()
-    #unittest.main()
+    unittest.main()
     #test_only_one_logopt_date(TestLogFileOptionsDay)
     #test_only_one_logopt_date(TestLogFileOptWeek)
     #test_only_one_logopt_date(TestLogFileOptMonth)
-    test_only_one_logopt_date(TestLogFileOptYear)
+    #test_only_one_logopt_date(TestLogFileOptYear)

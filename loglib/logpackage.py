@@ -39,6 +39,13 @@ SpecialLoggerType: TypeAlias = Literal[4]
 
 DEFAULT = 'default'
 
+DEFAULT_TOPLEVEL_LOGGERS = {
+    LOGGERTREE: "__log_hierarchy__",
+    logging.DEBUG: "__debug__",
+    logging.ERROR: "__error__",
+    logging.INFO: "__info__"
+}
+
 def _makedir(superdirpath: str, dirname: str):
     """특정 위치에 디렉토리를 생성하는 함수. 
 
@@ -280,14 +287,6 @@ class LogFileEnvironment():
         # False : 하나의 로그 파일 안에 모든 수준의 로그 기록 모드.
         self.level_mode: bool = True
 
-        self.default_toplevel_loggers_name = {
-            LOGGERTREE: "__log_hierarchy__",
-            logging.DEBUG: "__debug__",
-            logging.ERROR: "__error__",
-            logging.INFO: "__info__"
-        }
-        self.top_level_loggers_name: dict[LoggerLevel, str] \
-            = self.default_toplevel_loggers_name.copy()
         self.default_level_log_file_names = {
             logging.DEBUG: 'debug.log',
             logging.INFO: 'info.log',
@@ -627,7 +626,7 @@ class LogFileEnvironment():
             def get_filter(level: LoggerLevel):
                 try:
                     new_filter = logging.Filter(
-                        self.top_level_loggers_name[level]
+                        DEFAULT_TOPLEVEL_LOGGERS[level]
                     )
                 except KeyError:
                     missing_level = logging.getLevelName(level)
@@ -652,7 +651,7 @@ class LogFileEnvironment():
                 )
                 return file_handler
 
-            for level in self.top_level_loggers_name:
+            for level in DEFAULT_TOPLEVEL_LOGGERS:
                 formatter_obj = get_formatter(level)
                 filter_obj = get_filter(level)
                 file_handler_obj = get_file_handler(level)
@@ -1176,10 +1175,13 @@ class CustomizablePackageLogger():
     """
     _this_instance = None
     _is_initialized: bool = False
+    _unique_logenv = None
 
-    def __new__(cls, *args, **kwargs):
+    def __new__(cls, logenv=None):
         if cls._this_instance is None:
             cls._this_instance = super().__new__(cls)
+        if logenv and (cls._unique_logenv is None):
+            cls._unique_logenv = logenv
         return cls._this_instance
 
     def __init__(self, logenv: EasySetLogFileEnv | LogFileEnvironment = None):
@@ -1191,8 +1193,7 @@ class CustomizablePackageLogger():
         
         """
         if not CustomizablePackageLogger._is_initialized:
-            if logenv is None: return
-            self.logenv = logenv
+            self.logenv = CustomizablePackageLogger._unique_logenv
             self._delimiter = '.'
             self._log_hier = _LoggerHierarchy()
             self._root_logger = logging.getLogger()
@@ -1208,7 +1209,8 @@ class CustomizablePackageLogger():
         """새 로그 환경 설정 클래스 EasySetLogFileEnv 
         또는 LogFileEnvironment의 인스턴스 를 대입하여 새 로그 환경으로 설정한다.
         """
-        self.logenv = new_logenv
+        CustomizablePackageLogger._unique_logenv = new_logenv
+        self.logenv = CustomizablePackageLogger._unique_logenv
 
     def setLoggingOnOff(self, on_off: bool):
         """로깅 기능을 킬지 끌지를 결정하는 메서드. 
@@ -1257,7 +1259,7 @@ class CustomizablePackageLogger():
         """logVariable() 메서드 호출로 로깅을 시도하는 함수(또는 메서드)의 
         이름을 로거 객체 이름으로 사용하고, 해당 로거 객체를 생성, 호출하는 메서드.
         """
-        debug_toplevel_name = self.logenv.top_level_loggers_name[logging.DEBUG]
+        debug_toplevel_name = DEFAULT_TOPLEVEL_LOGGERS[logging.DEBUG]
         # 주어진 매개변수들의 정보를 토대로 로거 이름 생성.
         if classname == 'NoneType':
             # 로깅하는 곳이 클래스의 메서드가 아닌 함수일 경우.
@@ -1373,9 +1375,10 @@ class CustomizablePackageLogger():
         
         """
         logger_obj = None
-        base_logger_name = self.logenv.top_level_loggers_name[level]
+
+        base_logger_name = DEFAULT_TOPLEVEL_LOGGERS[level]
         if (name == ('' or 'root' or None)
-                or name in self.logenv.top_level_loggers_name.values()):
+                or name in DEFAULT_TOPLEVEL_LOGGERS.values()):
             logger_name = base_logger_name
         elif os.path.isfile(name) and inspect.getmodulename(name):
             logger_name = self._delimiter.join(
@@ -1435,7 +1438,7 @@ class CustomizablePackageLogger():
         로깅함. 
         """
         hierarchy_logger = logging.getLogger(
-            self.logenv.top_level_loggers_name[LOGGERTREE]
+            DEFAULT_TOPLEVEL_LOGGERS[LOGGERTREE]
         )
         hierarchy_logger.setLevel(logging.INFO)
         tree_str = self.getCurrentHierarchy()
