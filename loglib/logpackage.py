@@ -15,9 +15,9 @@ import warnings
 from typing import Literal, TypeAlias
 
 import logexc
+import tools
 from sub_modules.tree import PathTree
 from sub_modules.tree import AbsPath
-import tools
 
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']
