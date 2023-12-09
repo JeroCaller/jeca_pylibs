@@ -10,7 +10,7 @@ import os
 import heapq
 from typing import TypeAlias
 
-from submodules.tree import PathTree
+from tree import PathTree
 
 # type aliases
 Path: TypeAlias = str  # entity의 경로.
