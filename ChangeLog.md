@@ -1,6 +1,12 @@
 changelog
 ---
 - - -
+> 2023-12-11
+> - fdlib
+>   - fdhandler.py 생성 및 텍스트 파일 조작 클래스 TextFileHandler 추가
+>       - 텍스트 파일 생성 및 텍스트 쓰기, 읽기 기능 추가.
+>   - fdhandler.TextFileHandler 클래스에 대한 단위 테스트 코드 추가 및 테스트 진행(테스트 통과).
+
 > 2023-12-09
 > - fdlib
 >   - dirsearch.py 생성 및 여러 기능 추가.
