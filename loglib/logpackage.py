@@ -12,10 +12,13 @@ import os
 import inspect
 import logging
 import warnings
+import shutil
 from typing import Literal, TypeAlias
 
 import logexc
 import tools
+import sub_modules.dirsearch as dirs
+import sub_modules.fdhandler as fdh
 from sub_modules.tree import PathTree
 from sub_modules.tree import AbsPath
 
@@ -1472,15 +1475,46 @@ class LogFileManager():
     DELETE_MODE = 'delete'
     ERASE_MODE = 'erase'
 
-    def __init__(self, base_dir_path: DirPath):
+    def __init__(self, base_dir_path: DirPath = None):
         """
         Parameters
         ----------
-        base_dir_path: 로그 파일들을 하나로 모아 저장, 관리하고 있는 
-        베이스 디렉토리 경로.
+        base_dir_path
+            로그 파일들을 하나로 모아 저장, 관리하고 있는 
+            베이스 디렉토리 경로.
+
+        Raises
+        ------
+        FileNotFoundError
+            base_dir_path 매개변수로 입력한 경로가 존재하지 않거나 
+            디렉토리가 아닐 경우 발생.
 
         """
+        if base_dir_path is not None and not os.path.isdir(base_dir_path):
+            err_msg = """base_dir_path 매개변수로 입력한 경로가 
+            존재하지 않거나 디렉토리가 아닙니다.
+            """
+            raise FileNotFoundError(err_msg)
         self.base_dir_path = base_dir_path
+        self.txthandler = fdh.TextFileHandler()
+
+    def setBaseDirPath(self, new_basedir_path: DirPath):
+        """로그 파일들을 하나로 모아 저장, 관리하고 있는 
+        베이스 디렉토리 경로 설정.
+
+        Raises
+        ------
+        FileNotFoundError
+            new_basedir_path 매개변수로 입력한 경로가 존재하지 않거나 
+            디렉토리가 아닐 경우 발생.
+        
+        """
+        if not os.path.isdir(new_basedir_path):
+            err_msg = """new_basedir_path 매개변수로 입력한 경로가 
+            존재하지 않거나 디렉토리가 아닙니다.
+            """
+            raise FileNotFoundError(err_msg)
+        self.base_dir_path = new_basedir_path
 
     def eraseAllInLogFile(
             self, 
@@ -1509,9 +1543,36 @@ class LogFileManager():
             date_dirname에 지정된 디렉토리 내 로그 파일의 내용만 지우고, 만약 
             해당 매개변수가 None이면 베이스 디렉토리 내에 있는 해당 로그 
             파일을 찾아 해당 파일에만 작업 수행.
+
+        Returns
+        -------
+        bool
+            해당 로그 파일이 존재하여 작업을 수행헀다면 True를, 해당 로그 파일이 단 
+            하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
         
         """
-        ...
+        if not logfile_name.endswith('.log'):
+            logfile_name = '.'.join(logfile_name, 'log')
+        
+        if find_all_files:
+            all_leaf_fds = dirs.get_all_in_rootdir(self.base_dir_path)
+            count_removed = 0
+            for fd in all_leaf_fds:
+                if os.path.basename(fd) == logfile_name:
+                    self.txthandler.setTxtFilePath(fd)
+                    self.txthandler.writeNew('')
+                    count_removed += 1
+            if count_removed == 0: return False
+        else:
+            if date_dirname:
+                logpath = os.path.join(self.base_dir_path, date_dirname)
+                logpath = os.path.join(logpath, logfile_name)
+            else:
+                logpath = os.path.join(self.base_dir_path, logfile_name)
+            if not os.path.isfile(logpath): return False
+            self.txthandler.setTxtFilePath(logpath)
+            self.txthandler.writeNew('')
+        return True
 
     def eraseAllInDateDir(
             self,
@@ -1521,10 +1582,27 @@ class LogFileManager():
 
         Parameters
         ----------
-        date_dirname: DirName(str)
+        date_dirname : DirName(str)
+
+        Returns
+        -------
+        bool
+            해당 로그 파일이 존재하여 작업을 수행헀다면 True를, 해당 로그 파일이 단 
+            하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
 
         """
-        ...
+        date_dir_fullpath = os.path.join(self.base_dir_path, date_dirname)
+        if not os.path.isdir(date_dir_fullpath): return False
+
+        all_leaf_fds = dirs.get_all_in_rootdir(date_dir_fullpath)
+        count_removed = 0
+        for fd in all_leaf_fds:
+            if os.path.basename(fd).endswith('.log'):
+                self.txthandler.setTxtFilePath(fd)
+                self.txthandler.writeNew('')
+                count_removed += 1
+        if count_removed == 0: return False
+        return True
 
     def deleteLogFile(
             self,
@@ -1551,9 +1629,37 @@ class LogFileManager():
             지정된 날짜 디렉토리 내의 logfile_name 매개변수로 지정된 
             로그 파일만을 지우고, 만약 date_dirname이 None일 경우 베이스 
             디렉토리에서 해당 로그 파일을 찾아 지운다. 
+
+        Returns
+        -------
+        bool
+            해당 로그 파일이 존재하여 작업을 수행헀다면 True를, 해당 로그 파일이 단 
+            하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
         
         """
-        ...
+        if find_all_files:
+            all_leaf_fds = dirs.get_all_in_rootdir(self.base_dir_path)
+            count_removed = 0
+            for fd in all_leaf_fds:
+                if os.path.basename(fd) == logfile_name:
+                    try:
+                        os.remove(fd)
+                    except:
+                        pass
+                    else:
+                        count_removed += 1
+            if count_removed == 0: return False
+        else:
+            if date_dirname:
+                logpath = os.path.join(self.base_dir_path, date_dirname)
+                logpath = os.path.join(logpath, logfile_name)
+            else:
+                logpath = os.path.join(self.base_dir_path, logfile_name)
+            try:
+                os.remove(logpath)
+            except FileNotFoundError:
+                return False
+            return True
 
     def deleteAllInDateDir(
             self,
@@ -1571,15 +1677,39 @@ class LogFileManager():
             삭제하고나서 해당 디렉토리 자체도 지울지 결정하는 매개변수.
             True시 해당 디렉토리 자체도 삭제하고, False시 해당 디렉토리는 
             삭제하지 않고 남긴다.
+
+        Returns
+        -------
+        bool
+            해당 로그 파일이 존재하여 작업을 수행헀다면 True를, 해당 로그 파일이 단 
+            하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
         
         """
-        ...
+        date_dir_fullpath = os.path.join(self.base_dir_path, date_dirname)
+        if not os.path.isdir(date_dir_fullpath): return False
+
+        if delete_dir:
+            shutil.rmtree(date_dir_fullpath)
+            return True
+
+        all_leaf_fds = dirs.get_all_in_rootdir(date_dir_fullpath)
+        count_removed = 0
+        for fd in all_leaf_fds:
+            if os.path.basename(fd).endswith('.log'):
+                try:
+                    os.remove(fd)
+                except:
+                    continue
+                else:
+                    count_removed += 1
+        if count_removed == 0: return False
+        return True
 
     def deleteBaseDir(self):
         """지정된 베이스 디렉토리와 그 내부의 모든 로그 파일, 날짜 디렉토리들을 
         모두 삭제한다. 
         """
-        ...
+        shutil.rmtree(self.base_dir_path)
 
     def setTimeInterval(
             self,
