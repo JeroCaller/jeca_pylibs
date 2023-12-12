@@ -202,3 +202,80 @@ class DateTools():
             else:
                 n_week += (the_day.day - monday_of_second_week) // 7 + 1
         return n_week
+    
+    def isDateStr(
+            self, 
+            target: str,
+        ) -> (DateOptions.DateType | None):
+        """주어진 문자열이 정해진 형태의 날짜 문자열인지 확인하는 메서드.
+
+        정해진 형태의 날짜 문자열은 getDateStr() 메서드의 반환 가능한 
+        문자열 형태를 따른다. 즉, DateOption 상수로 지정 가능한 날짜 
+        형태들을 모두 검사한다. 
+        DateOption 클래스 내 상수들)
+        DAY: 'YYYY-MM-DD'
+        WEEK: 'YYYY-MM-N주' (1 <= N <= 5)
+        MONTH: 'YYYY-MM'
+        YEAR: 'YYYY'
+
+        Parameters
+        ---------
+        target : str
+            날짜 문자열인지 검사할 문자열.
+
+        Returns
+        -------
+        DateOption.DateType
+            DAY: 'YYYY-MM-DD' 형태일 경우 반환.
+            WEEK: 'YYYY-MM-N주' 형태일 경우 반환.
+            MONTH: 'YYYY-MM' 형태일 경우 반환.
+            YEAR: 'YYYY' 형태일 경우 반환.
+        None
+            정해진 날짜 형태 중 어느 것과도 만족되지 않을 경우.
+
+        """
+        def _is_in_range(data: str, min_value: int, max_value: int):
+            try:
+                return min_value <= int(data) <= max_value
+            except ValueError:
+                return False
+
+        def is_year(data: str):
+            return _is_in_range(data, datetime.MINYEAR, datetime.MAXYEAR)
+        
+        def is_month(data: str):
+            return _is_in_range(data, 1, 12)
+        
+        def is_day(data: str):
+            return _is_in_range(data, 1, 31)
+        
+        def is_week(data: str):
+            if data.endswith('주'):
+                return _is_in_range(data[:-1], 1, 5)
+            return False
+        
+        target_split = target.split(self.delimiter)
+        state = None
+        for i, data in enumerate(target_split):
+            if i == 0:
+                if is_year(data):
+                    state = self.d_opt.YEAR
+                else:
+                    return None
+            elif i == 1:
+                if is_month(data):
+                    state = self.d_opt.MONTH
+                else:
+                    return None
+            elif i == 2:
+                if is_week(data):
+                    state = self.d_opt.WEEK
+                elif is_day(data):
+                    state = self.d_opt.DAY
+                else:
+                    state = None
+            else:
+                # len(target_split) >= 3 이상이면 
+                # 정해진 날짜 형태 중 그 어느것도 만족하지 않는다.
+                state = None
+        return state

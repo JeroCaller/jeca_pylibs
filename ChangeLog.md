@@ -1,6 +1,11 @@
 changelog
 ---
 - - -
+> 2023-12-12
+> - loglib
+>   - tools.py의 DateTools.isDateStr() 메서드 추가. 주어진 문자열이 DateTools.getDateStr()의 반환 형태 중 하나와 똑같은 날짜 형식인지 확인하는 메서드.
+>   - logpackage.py의 LogFileManager() 클래스에 날짜 디렉토리명의 날짜 유효성 검사 코드 추가.
+
 > 2023-12-11
 > - fdlib
 >   - fdhandler.py 생성 및 텍스트 파일 조작 클래스 TextFileHandler 추가

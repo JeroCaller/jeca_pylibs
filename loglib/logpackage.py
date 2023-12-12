@@ -250,11 +250,6 @@ class LogFileEnvironment():
 
     여러 옵션들을 제공하며, 그 중에 원하는 것을 선택하는 형식. 
 
-    추가 예정 옵션들.
-    * 로그 파일들을 원할 때 zip파일로 묶는 옵션. 사용자가 원할 때 
-    zip으로 묶는 옵션과 기간(일, 월, 년 등) 단위로 특정 날짜가 되면 자동으로 
-    기존의 로그 파일들을 설정한 기간 단위로 zip으로 묶는 옵션.
-
     logging 내장 라이브러리를 이용하며, 해당 라이브러리의 루트 로거 객체를 
     이용함.
 
@@ -1531,6 +1526,9 @@ class LogFileManager():
             있을 경우 해당 디렉토리명을 문자열로 입력. 
             만약 해당 로그 파일이 날짜 디렉토리 안이 아닌 
             베이스 디렉토리에 존재한다면 None을 입력.
+            날짜 디렉토리명은 tools.DateTools().getDateStr() 메서드의 
+            반환 형태 중 하나와 맞아야 함. 
+            자세한 반환 형태는 해당 메서드의 독스트링의 Returns 참조.
         logfile_name : FileName(str)
             내용을 지우고자 하는 로그 파일 이름.
         find_all_files : bool, default False
@@ -1565,6 +1563,8 @@ class LogFileManager():
             if count_removed == 0: return False
         else:
             if date_dirname:
+                if tools.DateTools().isDateStr(date_dirname) is None:
+                    return False
                 logpath = os.path.join(self.base_dir_path, date_dirname)
                 logpath = os.path.join(logpath, logfile_name)
             else:
@@ -1583,6 +1583,9 @@ class LogFileManager():
         Parameters
         ----------
         date_dirname : DirName(str)
+            날짜 디렉토리명은 tools.DateTools().getDateStr() 메서드의 
+            반환 형태 중 하나와 맞아야 함. 
+            자세한 반환 형태는 해당 메서드의 독스트링의 Returns 참조.
 
         Returns
         -------
@@ -1591,6 +1594,7 @@ class LogFileManager():
             하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
 
         """
+        if tools.DateTools().isDateStr(date_dirname) is None: return False
         date_dir_fullpath = os.path.join(self.base_dir_path, date_dirname)
         if not os.path.isdir(date_dir_fullpath): return False
 
@@ -1619,6 +1623,9 @@ class LogFileManager():
             해당 날짜 디렉토리명을 문자열로 입력. 만약 로그 파일이 
             날짜 디렉토리가 아닌 베이스 디렉토리 내에 있는 경우 None을 
             입력.
+            날짜 디렉토리명은 tools.DateTools().getDateStr() 메서드의 
+            반환 형태 중 하나와 맞아야 함. 
+            자세한 반환 형태는 해당 메서드의 독스트링의 Returns 참조.
         logfile_name : FileName(str)
             삭제하고자 하는 로그 파일명.
         find_all_files : bool, default False
@@ -1637,6 +1644,8 @@ class LogFileManager():
             하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
         
         """
+        if not logfile_name.endswith('.log'):
+            logfile_name = '.'.join(logfile_name, 'log')
         if find_all_files:
             all_leaf_fds = dirs.get_all_in_rootdir(self.base_dir_path)
             count_removed = 0
@@ -1651,6 +1660,8 @@ class LogFileManager():
             if count_removed == 0: return False
         else:
             if date_dirname:
+                if tools.DateTools().isDateStr(date_dirname) is None:
+                    return False
                 logpath = os.path.join(self.base_dir_path, date_dirname)
                 logpath = os.path.join(logpath, logfile_name)
             else:
@@ -1671,7 +1682,10 @@ class LogFileManager():
         Parameters
         ----------
         date_dirname : DirName(str)
-            그 안의 로그 파일들을 모두 삭제할 날짜 디렉토리명을 문자열로 대입.
+            안의 로그 파일들을 모두 삭제할 날짜 디렉토리명을 문자열로 대입.
+            날짜 디렉토리명은 tools.DateTools().getDateStr() 메서드의 
+            반환 형태 중 하나와 맞아야 함. 
+            자세한 반환 형태는 해당 메서드의 독스트링의 Returns 참조.
         delete_dir : bool, default False
             date_dirname 매개변수로 지정된 디렉토리 내 모든 로그 파일들을 
             삭제하고나서 해당 디렉토리 자체도 지울지 결정하는 매개변수.
@@ -1685,6 +1699,7 @@ class LogFileManager():
             하나도 존재하지 않아 작업을 수행할 수 없었다면 False를 반환.
         
         """
+        if tools.DateTools().isDateStr(date_dirname) is None: return False
         date_dir_fullpath = os.path.join(self.base_dir_path, date_dirname)
         if not os.path.isdir(date_dir_fullpath): return False
 
@@ -1704,12 +1719,6 @@ class LogFileManager():
                     count_removed += 1
         if count_removed == 0: return False
         return True
-
-    def deleteBaseDir(self):
-        """지정된 베이스 디렉토리와 그 내부의 모든 로그 파일, 날짜 디렉토리들을 
-        모두 삭제한다. 
-        """
-        shutil.rmtree(self.base_dir_path)
 
     def setTimeInterval(
             self,

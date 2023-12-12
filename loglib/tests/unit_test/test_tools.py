@@ -78,6 +78,80 @@ class TestDateTools(unittest.TestCase):
         year_result = get_date_str(target_date, self.dateop.YEAR)
         self.assertEqual(year_result, '2023')
 
+    def testIsDateStr(self):
+        data = ''
+        self.assertEqual(self.datetool.isDateStr(data), None)
+
+        # test year
+        data = '2023'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.YEAR)
+        data = '0023'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.YEAR)
+        data = '10000'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '-1'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+
+        # test month
+        data = '2023-12'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.MONTH)
+        data = '0023-01'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.MONTH)
+        data = '2032-1'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.MONTH)
+        data = '-2023-12'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-12-'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-13'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-00'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023_12'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+
+        # test day
+        data = '2023-12-12'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
+        data = '0023-01-01'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
+        data = '2023-01-1'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
+        data = '2023-11-31' # 해당 달에는 31일이 없다.
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
+        data = '2023-12-00'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-12-32'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '-2023-12-12'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-12-12-'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023_12_12'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+
+        # test week
+        data = '2023-12-02주'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.WEEK)
+        data = '2023-12-2주'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.WEEK)
+        data = '0001-01-03주'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.WEEK)
+        data = '1-1-3주'
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.WEEK)
+        data = '2023-12-05주' # 해당 달에 5주는 없다.
+        self.assertEqual(self.datetool.isDateStr(data), self.dateop.WEEK)
+        data = '-2023-12-04주'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-12-04주-'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-12-주'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-12-00주'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023_12_01주'
+        self.assertEqual(self.datetool.isDateStr(data), None)
+
 
 if __name__ == '__main__':
     unittest.main()
