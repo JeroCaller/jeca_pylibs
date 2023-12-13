@@ -1,5 +1,6 @@
-"""
-로깅 테스트를 위한 패키지 및 모듈 모음. 
+"""로깅 테스트를 위한 패키지 및 모듈 모음. 
+loglib 사용법에 대한 예이기도 하다.
+
 """
 import sys
 import os
@@ -11,7 +12,7 @@ sys.path.append(super_dir)
 c_dir = get_current_absdir(__file__)
 sys.path.append(c_dir)
 
-from logpackage import (CustomizablePackageLogger, DetectErrorAndLog, 
+from logpackage import (PackageLogger, DetectErrorAndLog, 
 LogFuncEndPoint, EasySetLogFileEnv)
 from tools import DateOptions
 
@@ -23,7 +24,7 @@ log_env.setEssentialLogEnv(
     base_dir=os.path.dirname(__file__), level_option=True,
     date_opt=DateOptions.DAY
 )
-pl = CustomizablePackageLogger(logenv=log_env)
+pl = PackageLogger(logenv=log_env)
 error_logger = pl.getErrorLogger(__file__)
 program_start_end_logger = pl.getInfoLogger('program_start_end')
 

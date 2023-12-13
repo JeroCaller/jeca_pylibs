@@ -11,13 +11,13 @@ sys.path.append(super_dir)
 c_dir = get_current_absdir(__file__)
 sys.path.append(c_dir)
 
-from logpackage import (CustomizablePackageLogger, 
+from logpackage import (PackageLogger, 
 EasySetLogFileEnv, LogFuncEndPoint, DetectErrorAndLog)
 
 from pm import PlusMinus
 from subdir.md import MultiDivide
 
-main_pl = CustomizablePackageLogger(EasySetLogFileEnv())
+main_pl = PackageLogger(EasySetLogFileEnv())
 
 error_logger = main_pl.getErrorLogger(__file__)
 program_start_end_logger = main_pl.getInfoLogger('program_start_end_logger')

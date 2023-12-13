@@ -12,11 +12,11 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
-_LoggerPathTree, _LoggerHierarchy, CustomizablePackageLogger, 
+_LoggerPathTree, _LoggerHierarchy, PackageLogger, 
 EasySetLogFileEnv)
 from logexc import LogLowestLevelError
 from tools import DateOptions, DateTools
-from tests.fixtures.testpkg3 import main
+from tests.fixtures.testpkg import main
 
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
 
@@ -235,7 +235,7 @@ class InitLogFileOpt():
             self, 
             dateopt: DateOptions
         ):
-        self.base_dir_location = '..\\fixtures\\testpkg3'
+        self.base_dir_location = '..\\fixtures\\testpkg'
         if dateopt == DateOptions.DAY:
             self.base_dir_name_date = 'logfiles_day'
         elif dateopt == DateOptions.WEEK:
@@ -630,7 +630,7 @@ class TestLogFileOptMonth(unittest.TestCase):
 
 
 class TestLogFileOptYear(unittest.TestCase):
-    """loglib\\tests\\fixtures\\testpkg3의 mainfunc 함수 테스트.
+    """loglib\\tests\\fixtures\\testpkg의 mainfunc 함수 테스트.
     year 모드만 테스트함.
 
     해당 테스트 클래스에서 테스트하고자 하는 것들.

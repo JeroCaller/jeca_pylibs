@@ -1,6 +1,14 @@
 changelog
 ---
 - - -
+> 2023-12-13
+> - loglib
+> - 코드 리팩토링
+>   - 기존 PackageLogger 클래스 삭제 및 관련 테스트 fixture 삭제.
+>   - 기존 CustomizablePackageLogger 클래스 이름을 PackageLogger 이름으로 변경.
+>   - 기존 fixture 패키지들의 이름 변경
+>   - 기존 클래스 삭제 및 클래스명 변경으로 인한 모듈 import 관련 코드 리팩토링.
+
 > 2023-12-12
 > - loglib
 >   - tools.py의 DateTools.isDateStr() 메서드 추가. 주어진 문자열이 DateTools.getDateStr()의 반환 형태 중 하나와 똑같은 날짜 형식인지 확인하는 메서드.

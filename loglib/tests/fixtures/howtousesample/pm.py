@@ -5,9 +5,9 @@ from dirimporttool import get_super_dir_directly
 super_dir = get_super_dir_directly(__file__, 3)
 sys.path.append(super_dir)
 
-from logpackage import CustomizablePackageLogger, LogFuncEndPoint
+from logpackage import PackageLogger, LogFuncEndPoint
 
-collector = CustomizablePackageLogger()
+collector = PackageLogger()
 program_start_end_logger = collector.getInfoLogger('program_start_end')
 
 class PlusMinus():

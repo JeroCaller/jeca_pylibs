@@ -1,6 +1,6 @@
-from logpackage import CustomizablePackageLogger, LogFuncEndPoint
+from logpackage import PackageLogger, LogFuncEndPoint
 
-collector = CustomizablePackageLogger()
+collector = PackageLogger()
 program_start_end_logger = collector.getInfoLogger('program_start_end_logger')
 
 
