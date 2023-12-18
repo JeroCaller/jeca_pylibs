@@ -11,7 +11,6 @@
 import os
 import inspect
 import logging
-import warnings
 import shutil
 from typing import Literal, TypeAlias
 
@@ -47,6 +46,12 @@ DEFAULT_TOPLEVEL_LOGGERS = {
     logging.DEBUG: "__debug__",
     logging.ERROR: "__error__",
     logging.INFO: "__info__"
+}
+DEFAULT_LEVEL_LOG_FILE_NAMES = {
+    logging.DEBUG: 'debug.log',
+    logging.INFO: 'info.log',
+    logging.ERROR: 'error.log',
+    LOGGERTREE: 'logger_tree.log',
 }
 
 def _makedir(superdirpath: str, dirname: str):
@@ -278,6 +283,9 @@ class LogFileEnvironment():
         self.base_dir: DirPath = ''
         self.toplevel_module_path: FilePath = ''
 
+        self.date_type: tools.DateOptions = tools.DateOptions.FREE
+        self.datetool = tools.DateTools()
+
         # 로그 파일을 로그 수준별로 나눠서 저장할 지, 
         # 하나의 로그 파일 안에 모든 수준의 로그를 기록하도록
         # 할지 결정하는 변수.
@@ -285,17 +293,10 @@ class LogFileEnvironment():
         # False : 하나의 로그 파일 안에 모든 수준의 로그 기록 모드.
         self.level_mode: bool = True
 
-        self.default_level_log_file_names = {
-            logging.DEBUG: 'debug.log',
-            logging.INFO: 'info.log',
-            logging.ERROR: 'error.log',
-            LOGGERTREE: 'logger_tree.log',
-        }
-        self.level_log_file_names: dict[LoggerLevel, FileName] \
-            = self.default_level_log_file_names.copy()
-        
-        self.date_type: tools.DateOptions = tools.DateOptions.FREE
-        self.datetool = tools.DateTools()
+        self.level_log_file_names: dict[LoggerLevel, FileName] = {}
+        self.setLogFileNamesForEachLevels(
+            DEFAULT_LEVEL_LOG_FILE_NAMES.copy()
+        )
 
         self.default_common_formatter \
             = logging.Formatter(
@@ -398,7 +399,8 @@ class LogFileEnvironment():
 
     def setLogFileNamesForEachLevels(
             self, 
-            level_file_names: dict[LoggerLevel, str] | None
+            level_file_names: dict[LoggerLevel, str] | None = None,
+            suffix_date: bool = True
         ):
         """수준별로 로그 파일들을 분류하여 저장할 경우, 각 수준별 
         로그 파일명을 설정하는 메서드. 
@@ -419,6 +421,10 @@ class LogFileEnvironment():
             }
 
             None 입력 시 기본 로그 파일명으로 설정됨.
+        suffix_date : bool, default True
+            로그 파일명 뒤에 오늘 날짜를 '_YYYY-MM-DD'형태로 추가할 지 결정하는 
+            매개변수. 
+            예) debug_2023-12-18.log
         
         """
         if level_file_names is None:
@@ -429,8 +435,14 @@ class LogFileEnvironment():
         self.level_log_file_names.clear()
         for k, v in level_file_names.items():
             if not v.endswith('.log'):
+                if suffix_date:
+                    v = '_'.join([v, self.datetool.getTodaysDateStr()])
                 self.level_log_file_names[k] = '.'.join([v, 'log'])
             else:
+                if suffix_date:
+                    v = v.split('.')[0]
+                    v = '_'.join([v, self.datetool.getTodaysDateStr()])
+                    v = '.'.join([v, 'log'])
                 self.level_log_file_names[k] = v
 
     def setCommonFormatter(self, strfmt: str | None):
@@ -610,7 +622,6 @@ class LogFileEnvironment():
         객체를 이용함.
 
         """
-        # PackageLogger()._setLoggerEnvironment() 메서드 코드 참고.
         os.makedirs(self.base_dir, exist_ok=True)
 
         def by_levels():

@@ -67,7 +67,6 @@ def mainfunc(
 
     main_pl.logAllLoggersTree()
 
-
 if __name__ == '__main__':
     pass
     
