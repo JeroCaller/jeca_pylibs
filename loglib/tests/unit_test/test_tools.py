@@ -166,30 +166,39 @@ class TestDateTools(unittest.TestCase):
         self.assertEqual(result, '2023-11-03')
 
         # test 2
-        datas = [f'2023-11-{n}주' for n in range(2, 5+1)]
-        weekdays = [i for i in range(0, 6+1)]
-        expected_results = []
-        for i in range(6, 30+1):
-            date_str = '2023-11-'
-            if i < 10:
-                date_str += '0'
-            date_str += str(i)
-            expected_results.append(date_str)
+        def do_test(
+                week_range: list[int],
+                ex_re_range: list[int],
+                year_month: str
+            ):
+            s, e = week_range
+            datas = [f'{year_month}{n}주' for n in range(s, e+1)]
+            weekdays = [i for i in range(0, 6+1)]
+            ex_re = []
+            s, e = ex_re_range
+            for i in range(s, e+1):
+                date_str = year_month
+                if i < 10:
+                    date_str += '0'
+                date_str += str(i)
+                ex_re.append(date_str)
 
-        def test_iterably():
-            i = 0
-            for j, week_date in enumerate(datas):
-                for k, wd in enumerate(weekdays):
-                    if i >= len(expected_results): break
-                    result = self.datetool.getDateFromWeek(week_date, wd)
-                    self.assertEqual(
-                        result, 
-                        expected_results[i], 
-                        f'{i} {j} {k}'
-                    )
-                    i += 1
+            def test_iterably():
+                i = 0
+                for j, week_date in enumerate(datas):
+                    for k, wd in enumerate(weekdays):
+                        if i >= len(ex_re): break
+                        result = self.datetool.getDateFromWeek(week_date, wd)
+                        self.assertEqual(
+                            result, 
+                            ex_re[i], 
+                            f'{i} {j} {k}'
+                        )
+                        i += 1
+            
+            test_iterably()
 
-        test_iterably()
+        do_test([2, 5], [6, 30], '2023-11-')
 
         # test 3
         # 2023-12-01~03은 2023-11-5주차에 해당
@@ -202,7 +211,17 @@ class TestDateTools(unittest.TestCase):
         self.assertEqual(result, '2023-12-03')
 
         # test 4
-        ...
+        # 2023-12-01일은 금요일, 즉 11월의 5주차이다. 
+        # 해당 달의 1주차는 2023-12-04(월) 부터이다.
+        do_test([1, 4], [4, 31], '2023-12-')
+
+        # test 5
+        data = '2023-12-5주'
+        result = self.datetool.getDateFromWeek(data)
+        self.assertEqual(result, '2024-01-01')
+        data = '2023-12-6주'
+        result = self.datetool.getDateFromWeek(data)
+        self.assertEqual(result, None) # 1 <= N주 <= 5
 
 if __name__ == '__main__':
     unittest.main()

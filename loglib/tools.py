@@ -292,6 +292,10 @@ class DateTools():
         """주어진 날짜 문자열이 'YYYY-MM-N주' 형태로 주어질 때, 
         해당 주의 날짜를 'YYYY-MM-DD'형태로 반환하는 메서드.
 
+        week_date 매개변수로 주어지는 날짜 형태 문자열이 'YYYY-MM-N주' 
+        형태인지 확인하기 위해 내부적으로 이 클래스의 isDateStr() 
+        메서드를 사용함.
+
         Parameters
         ----------
         week_date : str

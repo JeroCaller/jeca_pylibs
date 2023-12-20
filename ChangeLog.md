@@ -4,7 +4,7 @@ changelog
 > 2023-12-20
 > - loglib
 > - tools.py
->   - 'YYYY-MM-N주' 형태의 날짜를 'YYYY-MM-DD'로 바꾸는 기능 구현 및 관련 테스트 코드 작성.
+>   - 'YYYY-MM-N주' 형태의 날짜를 'YYYY-MM-DD'로 바꾸는 기능 구현 및 관련 테스트 코드 작성. 테스트 통과.
 
 > 2023-12-18
 > - loglib
