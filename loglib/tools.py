@@ -1,6 +1,9 @@
 import datetime
 import calendar
+import os
 from typing import Literal, TypeAlias
+
+from sub_modules.dirsearch import get_all_in_rootdir
 
 
 class DateOptions():
@@ -279,3 +282,96 @@ class DateTools():
                 # 정해진 날짜 형태 중 그 어느것도 만족하지 않는다.
                 state = None
         return state
+    
+    def getDateFromWeek(
+            self, 
+            week_date: str, 
+            weekday: int = calendar.MONDAY,
+            to_str: bool = True
+        ):
+        """주어진 날짜 문자열이 'YYYY-MM-N주' 형태로 주어질 때, 
+        해당 주의 날짜를 'YYYY-MM-DD'형태로 반환하는 메서드.
+
+        Parameters
+        ----------
+        week_date : str
+            변환하고자 하는 주 형태의 날짜 문자열.
+        weekday : int
+            해당 주의 어느 요일을 반환할 것인지에 대한 매개변수. 
+            calendar 모듈의 MONDAY ~ SUNDAY 상수를 이용.
+        to_str : bool, default True
+            결과값을 'YYYY-MM-DD' 형태의 문자열로 반환할 것인지 
+            datetime.date() 객체로 반환할 것인지 결정하는 매개변수. 
+            True 시 문자열로, False 시 datetime.date() 객체를 반환.
+
+        Returns
+        -------
+        datetime.date | str
+            str -> 'YYYY-MM-DD'
+            만약 첫 째 주에 weekday로 지정한 날이 없다면
+            첫 째 주 첫 날인 1일로 기본으로 지정. 
+            예) week_day = '2023-11-1주', weekday = calendar.TUESDAY
+            => 2023-11-1주차인 2023-11-01은 수요일이다. 이 경우 해당 달의 해당 주차에 
+            화요일은 없으므로 해당 달의 1일인 2023-11-01을 반환. 
+            한 편, 특정 달의 마지막 주이고, weekday가 그 다음 달의 1일 이후 날짜에 해당된다면
+            해당 날짜로 반환됨.
+            예) 2023-11-5주, 금요일 = 2023-12-01
+        None
+            week_date 매개변수로 주어진 날짜가 'YYYY-MM-N주' 형태가 
+            아닐 경우 반환.
+
+        """
+        if self.isDateStr(week_date) != self.d_opt.WEEK:
+            return None
+        
+        year, month, week = week_date.split(self.delimiter)
+        year, month, week = int(year), int(month), int(week[0])
+
+        def return_what(day):
+            if to_str:
+                return self.combineDateToGetDateStr(year, month, day)
+            return datetime.date(year, month, day)
+    
+        first_day = datetime.date(year, month, 1)
+        criterion = [
+            calendar.MONDAY, calendar.TUESDAY, 
+            calendar.WEDNESDAY, calendar.THURSDAY,
+        ]
+        the_day = 0
+        if first_day.weekday() in criterion:
+            if week == 1:
+                if weekday < first_day.weekday():
+                    # 첫 째 주에 weekday로 지정한 날이 없다면
+                    # 첫 째 주 첫 날인 1일로 기본으로 지정.
+                    the_day = 1
+                else:
+                    the_day = 1 + weekday - first_day.weekday()
+                return return_what(the_day)
+            else:
+                week -= 1
+        # 달력 상에서 두 번째 행의 월요일에 해당하는 날
+        the_day = first_day.day + (7 - first_day.weekday())
+        the_day += 7 * (week-1) + weekday
+
+        # 특정 달의 마지막 주이고, weekday가 그 다음 달의 1일 이후 날짜에 해당된다면
+        # 그 날로 수정.
+        # 예) 2023-11-5주, 금요일 -> 2023-12-01
+        final_day = calendar.monthrange(year, month)[1]
+        diff = the_day - final_day
+        if diff > 0:
+            next_date = datetime.date(year, month, final_day) \
+                + datetime.timedelta(days=diff)
+            year, month, the_day = next_date.year, next_date.month, next_date.day
+
+        return return_what(the_day)
+    
+    def searchDateDir(self, root_dir: str):
+        """루트 폴더 안에 날짜 문자열을 이름으로 갖는 모든 하위 디렉토리들의 
+        경로와 그 문자열을 얻어 날짜순으로 정렬한 결과물을 반환하는 메서드.
+        """
+        leaf_entities = get_all_in_rootdir(root_dir)
+        dirs_list = []
+        for entity in leaf_entities:
+            if os.path.isdir(entity):
+                dirs_list.append(entity)
+        ...

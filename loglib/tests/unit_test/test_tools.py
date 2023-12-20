@@ -2,6 +2,7 @@ import unittest
 import sys
 import re
 import datetime
+import calendar
 
 from dirimporttool import get_super_dir_directly
 
@@ -152,6 +153,56 @@ class TestDateTools(unittest.TestCase):
         data = '2023_12_01주'
         self.assertEqual(self.datetool.isDateStr(data), None)
 
+    def testGetDateFromWeek(self):
+        # test 1
+        data = '2023-11-1주' # 해당 월의 1일이 수요일 -> 1일부터 1주차
+        result = self.datetool.getDateFromWeek(data)
+        self.assertEqual(result, '2023-11-01')
+        result = self.datetool.getDateFromWeek(data, calendar.TUESDAY)
+        self.assertEqual(result, '2023-11-01')
+        result = self.datetool.getDateFromWeek(data, calendar.WEDNESDAY)
+        self.assertEqual(result, '2023-11-01')
+        result = self.datetool.getDateFromWeek(data, calendar.FRIDAY)
+        self.assertEqual(result, '2023-11-03')
+
+        # test 2
+        datas = [f'2023-11-{n}주' for n in range(2, 5+1)]
+        weekdays = [i for i in range(0, 6+1)]
+        expected_results = []
+        for i in range(6, 30+1):
+            date_str = '2023-11-'
+            if i < 10:
+                date_str += '0'
+            date_str += str(i)
+            expected_results.append(date_str)
+
+        def test_iterably():
+            i = 0
+            for j, week_date in enumerate(datas):
+                for k, wd in enumerate(weekdays):
+                    if i >= len(expected_results): break
+                    result = self.datetool.getDateFromWeek(week_date, wd)
+                    self.assertEqual(
+                        result, 
+                        expected_results[i], 
+                        f'{i} {j} {k}'
+                    )
+                    i += 1
+
+        test_iterably()
+
+        # test 3
+        # 2023-12-01~03은 2023-11-5주차에 해당
+        data = '2023-11-5주'
+        result = self.datetool.getDateFromWeek(data, calendar.FRIDAY)
+        self.assertEqual(result, '2023-12-01')
+        result = self.datetool.getDateFromWeek(data, calendar.SATURDAY)
+        self.assertEqual(result, '2023-12-02')
+        result = self.datetool.getDateFromWeek(data, calendar.SUNDAY)
+        self.assertEqual(result, '2023-12-03')
+
+        # test 4
+        ...
 
 if __name__ == '__main__':
     unittest.main()
