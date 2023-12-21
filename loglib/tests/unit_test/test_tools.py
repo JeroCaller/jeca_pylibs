@@ -281,7 +281,7 @@ class TestDateTools(unittest.TestCase):
             result = self.datetool.convertStrToDate(d)
             self.assertEqual(result, None)
 
-
+# ==== TestSearchDateDir() 테스트 클래스에 쓰일 함수들
 def make_datedirs(root_dir: str, datedirs: list[str]):
     """테스트를 위한 날짜 디렉토리 생성 함수.
     root_dir로 입력되는 루트 디렉토리 경로는 실제로 존재해야 함.
@@ -295,6 +295,35 @@ def make_datedirs(root_dir: str, datedirs: list[str]):
             os.mkdir(fullpath)
         except FileExistsError:
             pass
+
+def process_real_data(
+        test_results: list[tuple[int, datetime.date, str]]
+    ) -> (list[tuple[int, str, str]]):
+    work_done = []
+    for tup in test_results:
+        tup = (tup[0], tup[1].isoformat(), tup[2])
+        work_done.append(tup)
+    return work_done
+
+def process_exp_res(
+        data: list[tuple[str, str]],
+        rootdir: str,
+        datetype: DateOptions.DateType
+    ) -> (list[tuple[int, str, str]]):
+    """
+    data : list[tuple[expected_result_str, real_data_str]]
+    ex) data = [
+        ('2023-12-01', '2023-12-1'), ...
+    ]
+    """
+    work_done = []
+    rootdir = os.path.abspath(rootdir)
+    for exre, datedir in data:
+        fullpath = os.path.join(rootdir, datedir)
+        tup = (datetype, exre, fullpath)
+        work_done.append(tup)
+    return work_done
+# ===================
 
 
 class TestSearchDateDir(unittest.TestCase):
@@ -332,23 +361,21 @@ class TestSearchDateDir(unittest.TestCase):
             TestSearchDateDir.datedir_made = True
 
     def testDay(self):
-        results = self.datetool.searchDateDir(self.day_root_dir)
-        for i, tup in enumerate(results):
-            tup = (tup[0], tup[1].isoformat(), tup[2])
-            results[i] = tup
-        expected_results = [
-            ('0010-05-10', os.path.join(self.day_root_dir, '010-5-10')),
-            ('2023-12-01', os.path.join(self.day_root_dir, '2023-12-1')),
-            ('2023-12-04', os.path.join(self.day_root_dir, '2023-12-04')),
-            ('2023-12-21', os.path.join(self.day_root_dir, '2023-12-21')),
-            ('2023-12-31', os.path.join(self.day_root_dir, '2023-12-31')),
-            ('2024-01-01', os.path.join(self.day_root_dir, '2024-1-1')),
-            ('2024-12-21', os.path.join(self.day_root_dir, '2024-12-21')),
+        results = process_real_data(
+            self.datetool.searchDateDir(self.day_root_dir)
+        )
+        expected_data = [
+            ('0010-05-10', '010-5-10'),
+            ('2023-12-01', '2023-12-1'),
+            ('2023-12-04', '2023-12-04'),
+            ('2023-12-21', '2023-12-21'),
+            ('2023-12-31', '2023-12-31'),
+            ('2024-01-01', '2024-1-1'),
+            ('2024-12-21', '2024-12-21'),
         ]
-        for i, tup in enumerate(expected_results):
-            tup = (tup[0], os.path.abspath(tup[1]))
-            tup = tuple([self.d_opt.DAY] + list(tup))
-            expected_results[i] = tup
+        expected_results = process_exp_res(
+            expected_data, self.day_root_dir, self.d_opt.DAY
+        )
         self.assertEqual(results, expected_results)
 
 if __name__ == '__main__':

@@ -1,6 +1,10 @@
 changelog
 ---
 - - -
+> 2023-12-22
+> - loglib
+> - test_tools.py 일부 테스트 코드 리팩토링.
+
 > 2023-12-21
 > - loglib
 > - tools.py, test_tools.py
