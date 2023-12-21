@@ -1,6 +1,15 @@
 changelog
 ---
 - - -
+> 2023-12-21
+> - loglib
+> - tools.py, test_tools.py
+>   - tools.DateTools.isDateStr() 메서드 코드 수정. 특정 연, 월의 마지막 일수를 고려한 코드 추가. 해당 코드에 대한 테스트 코드 수정 및 추가. 테스트 성공.
+>   - 날짜 문자열을 입력받으면 이를 datetime.date 객체로 변환하여 반환하는 메서드인 
+DateTools.convertStrToDate() 메서드 및 관련 테스트 코드 추가. 테스트 성공.
+>   - 루트 폴더 안에 날짜 문자열을 이름으로 갖는 모든 하위 디렉토리들의 경로와 그 문자열을 얻어 날짜순으로 정렬한 결과물을 반환하는 메서드인 Datetools.searchDateDir()
+메서드 및 관련 테스트 코드 일부 추가. 현재까지 작성한 테스트 코드는 통과함. 추후 테스트 코드 추가 필요.
+
 > 2023-12-20
 > - loglib
 > - tools.py

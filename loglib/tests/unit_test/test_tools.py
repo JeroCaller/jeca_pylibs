@@ -3,6 +3,8 @@ import sys
 import re
 import datetime
 import calendar
+import os
+import random
 
 from dirimporttool import get_super_dir_directly
 
@@ -118,8 +120,12 @@ class TestDateTools(unittest.TestCase):
         self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
         data = '2023-01-1'
         self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
-        data = '2023-11-31' # 해당 달에는 31일이 없다.
+        data = '2023-12-31'
         self.assertEqual(self.datetool.isDateStr(data), self.dateop.DAY)
+        data = '2023-11-31' # 해당 달에는 31일이 없다.
+        self.assertEqual(self.datetool.isDateStr(data), None)
+        data = '2023-11-35'
+        self.assertEqual(self.datetool.isDateStr(data), None)
         data = '2023-12-00'
         self.assertEqual(self.datetool.isDateStr(data), None)
         data = '2023-12-32'
@@ -222,6 +228,128 @@ class TestDateTools(unittest.TestCase):
         data = '2023-12-6주'
         result = self.datetool.getDateFromWeek(data)
         self.assertEqual(result, None) # 1 <= N주 <= 5
+
+        # test 6
+        # 날짜 형식 테스트.
+        data = '2023-12-05주'
+        result = self.datetool.getDateFromWeek(data)
+        self.assertEqual(result, '2024-01-01')
+
+        # test 7
+        # datetime.date 객체 반환 테스트.
+        data = '2023-12-5주'
+        result = self.datetool.getDateFromWeek(data, to_str=False)
+        self.assertIsInstance(result, datetime.date)
+        self.assertEqual(result.isoformat(), '2024-01-01')
+
+    def testConvertStrToDate(self):
+        # test day
+        data = '2023-12-04'
+        result = self.datetool.convertStrToDate(data)
+        self.assertIsInstance(result, datetime.date)
+        self.assertEqual(result.isoformat(), '2023-12-04')
+
+        # test week
+        data = '2023-12-1주'
+        result = self.datetool.convertStrToDate(data)
+        self.assertIsInstance(result, datetime.date)
+        self.assertEqual(result.isoformat(), '2023-12-04')
+
+        data = '2023-12-5주'
+        result = self.datetool.convertStrToDate(data)
+        self.assertIsInstance(result, datetime.date)
+        self.assertEqual(result.isoformat(), '2024-01-01')
+
+        # test month
+        data = '2023-12'
+        result = self.datetool.convertStrToDate(data)
+        self.assertIsInstance(result, datetime.date)
+        self.assertEqual(result.isoformat(), '2023-12-01')
+
+        # test year
+        data = '2023'
+        result = self.datetool.convertStrToDate(data)
+        self.assertIsInstance(result, datetime.date)
+        self.assertEqual(result.isoformat(), '2023-01-01')
+
+        # test None
+        datas = [
+            '2023-1-45', '2023-1-', '2023-12-6주', 
+            '강동6주', '202312', '2023-13', '-1111',
+        ]
+        for d in datas:
+            result = self.datetool.convertStrToDate(d)
+            self.assertEqual(result, None)
+
+
+def make_datedirs(root_dir: str, datedirs: list[str]):
+    """테스트를 위한 날짜 디렉토리 생성 함수.
+    root_dir로 입력되는 루트 디렉토리 경로는 실제로 존재해야 함.
+    datedirs는 날짜 디렉토리의 이름으로 설정할 날짜 형식 문자열들의 
+    리스트.
+
+    """
+    for d in datedirs:
+        try:
+            fullpath = os.path.join(root_dir, d)
+            os.mkdir(fullpath)
+        except FileExistsError:
+            pass
+
+
+class TestSearchDateDir(unittest.TestCase):
+    """tools.DateTools.searchDateDir() 메서드 테스트"""
+    datedir_made: bool = False
+
+    def setUp(self):
+        self.datetool = DateTools()
+        self.d_opt = DateOptions()
+
+        self.day_root_dir = '..\\fixtures\\datedirs\\days'
+        self.week_root_dir = '..\\fixtures\\datedirs\\weeks'
+        self.month_root_dir = '..\\fixtures\\datedirs\\months'
+        self.year_root_dir = '..\\fixtures\\datedirs\\years'
+
+        self.day_dates = [
+            '010-5-10', '010-1234-5678', '2023-11-31', 
+            '2023-12-', '2023-12-1', '2023-12-04', 
+            '2023-12-21', '2023-12-21-', '2023-12-31',
+            '2024-1-1', '2024-12-21'
+        ]
+        self.week_dates = [...]
+        self.month_dates = [...]
+        self.year_dates = [...]
+        dates = [
+            self.day_dates, self.week_dates, 
+            self.month_dates, self.year_dates
+        ]
+        for d in dates:
+            random.shuffle(d)
+
+        if not TestSearchDateDir.datedir_made:
+            make_datedirs(self.day_root_dir, self.day_dates)
+            ...
+            TestSearchDateDir.datedir_made = True
+
+    def testDay(self):
+        results = self.datetool.searchDateDir(self.day_root_dir)
+        for i, tup in enumerate(results):
+            tup = (tup[0], tup[1].isoformat(), tup[2])
+            results[i] = tup
+        expected_results = [
+            ('0010-05-10', os.path.join(self.day_root_dir, '010-5-10')),
+            ('2023-12-01', os.path.join(self.day_root_dir, '2023-12-1')),
+            ('2023-12-04', os.path.join(self.day_root_dir, '2023-12-04')),
+            ('2023-12-21', os.path.join(self.day_root_dir, '2023-12-21')),
+            ('2023-12-31', os.path.join(self.day_root_dir, '2023-12-31')),
+            ('2024-01-01', os.path.join(self.day_root_dir, '2024-1-1')),
+            ('2024-12-21', os.path.join(self.day_root_dir, '2024-12-21')),
+        ]
+        for i, tup in enumerate(expected_results):
+            tup = (tup[0], os.path.abspath(tup[1]))
+            tup = tuple([self.d_opt.DAY] + list(tup))
+            expected_results[i] = tup
+        self.assertEqual(results, expected_results)
 
 if __name__ == '__main__':
     unittest.main()

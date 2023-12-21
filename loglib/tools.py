@@ -2,6 +2,7 @@ import datetime
 import calendar
 import os
 from typing import Literal, TypeAlias
+from operator import itemgetter
 
 from sub_modules.dirsearch import get_all_in_rootdir
 
@@ -235,6 +236,20 @@ class DateTools():
             YEAR: 'YYYY' 형태일 경우 반환.
         None
             정해진 날짜 형태 중 어느 것과도 만족되지 않을 경우.
+            '2023-11-35'과 같이 형태는 날짜 형태이나 실질적으로 
+            존재하지 않는 날짜여도 해당 문자열을 날짜 형태 문자열로 
+            인식하지 않고 None을 반환함.
+
+        Notes
+        -----
+        '2023-11-35'와 같이 날짜 형태는 만족하나 실질적으로는 존재하지 
+        않는 날짜여도 해당 문자열을 날짜 형태 문자열로 인식하지 않는다. 
+        정해진 날짜 형태를 만족하려면 다음의 조건들을 만족해야 한다.
+
+        1. 일수의 경우 1 <= day <= 31을 만족해야 한다.
+        2. 월의 경우 1 <= month <= 12을 만족해야 한다.
+        3. 연도의 경우, datetime.MINYEAR <= year <= datetime.MAXYEAR을 
+        만족해야 한다. 
 
         """
         def _is_in_range(data: str, min_value: int, max_value: int):
@@ -249,8 +264,12 @@ class DateTools():
         def is_month(data: str):
             return _is_in_range(data, 1, 12)
         
-        def is_day(data: str):
-            return _is_in_range(data, 1, 31)
+        def is_day(data: str, year: int = None, month: int = None):
+            if year and month:
+                end_day = calendar.monthrange(year, month)[1]
+            else:
+                end_day = 31
+            return _is_in_range(data, 1, end_day)
         
         def is_week(data: str):
             if data.endswith('주'):
@@ -259,21 +278,24 @@ class DateTools():
         
         target_split = target.split(self.delimiter)
         state = None
+        year, month = 0, 0
         for i, data in enumerate(target_split):
             if i == 0:
                 if is_year(data):
                     state = self.d_opt.YEAR
+                    year = int(data)
                 else:
                     return None
             elif i == 1:
                 if is_month(data):
                     state = self.d_opt.MONTH
+                    month = int(data)
                 else:
                     return None
             elif i == 2:
                 if is_week(data):
                     state = self.d_opt.WEEK
-                elif is_day(data):
+                elif is_day(data, year, month):
                     state = self.d_opt.DAY
                 else:
                     state = None
@@ -329,7 +351,7 @@ class DateTools():
             return None
         
         year, month, week = week_date.split(self.delimiter)
-        year, month, week = int(year), int(month), int(week[0])
+        year, month, week = int(year), int(month), int(week[:-1])
 
         def return_what(day):
             if to_str:
@@ -369,13 +391,87 @@ class DateTools():
 
         return return_what(the_day)
     
-    def searchDateDir(self, root_dir: str):
+    def convertStrToDate(self, date_str: str) -> (datetime.date | None):
+        """날짜 문자열을 입력받으면 이를 datetime.date 객체로 변환하여 
+        반환하는 메서드. 
+
+        날짜 문자열의 형태에 따라 반환되는 정확한 값이 다르다. 자세한 사항은 
+        아래의 Returns 항목 참조.
+
+        Parameters
+        ----------
+        date_str : str
+            문자열 형태의 날짜 문자열. 이 메서드에서 해석 가능한 날짜 
+            형태로 다음이 있다. 
+            DAY : 'YYYY-MM-DD'
+            WEEK : 'YYYY-MM-N주'
+            MONTH : 'YYYY-MM'
+            YEAR : 'YYYY'
+
+        Returns
+        ------
+        datetime.date
+            date_str 매개변수로 입력된 값의 날짜 형태마다 반환되는 정확한 값이 다르다.
+            DAY ('YYYY-MM-DD'): datetime.date(YYYY, MM, DD) 날짜 그대로 반환.
+            WEEK ('YYYY-MM-N주'): 해당 주의 첫 요일인 월요일에 해당하는 날짜를 반환.
+                예) '2023-12-1주' -> datetime.date(2023, 12, 4)
+            MONTH ('YYYY-MM'): 해당 월의 1일로 반환.
+                예) '2023-12' -> datetime.date(2023, 12, 1)
+            YEAR ('YYYY'): 해당 연도의 1월 1일로 반환.
+                예) '2023' -> datetime.date(2023, 1, 1)
+        None
+            Parameters 부분의 date_str 매개변수 설명에 언급한 날짜 형태가 아닌 
+            문자열이 date_str에 입력된 경우 반환됨.
+        
+        """
+        datetype = self.isDateStr(date_str)
+        if datetype is None: return None
+
+        if datetype == self.d_opt.DAY:
+            year, month, day = [int(d) for d in date_str.split(self.delimiter)]
+            return datetime.date(year, month, day)
+        if datetype == self.d_opt.WEEK:
+            return self.getDateFromWeek(date_str, to_str=False)
+        if datetype == self.d_opt.MONTH:
+            year, month = [int(d) for d in date_str.split(self.delimiter)]
+            return datetime.date(year, month, 1)
+        if datetype == self.d_opt.YEAR:
+            year = int(date_str)
+            return datetime.date(year, 1, 1)
+    
+    def searchDateDir(
+            self, 
+            root_dir: str
+        ) -> (list[tuple[DateOptions.DateType, datetime.date, str]]):
         """루트 폴더 안에 날짜 문자열을 이름으로 갖는 모든 하위 디렉토리들의 
         경로와 그 문자열을 얻어 날짜순으로 정렬한 결과물을 반환하는 메서드.
+
+        Parameters
+        ----------
+        root_dir : str
+            날짜 형식의 문자열을 이름으로 갖는 하위 디렉토리들이 모여 있는 
+            상위 디렉토리의 절대 경로.
+        
+        Returns
+        -------
+        list[tuple[DateOptions.DateType, datetime.date, str]]
+            차례대로 DateOptions.DateType, datetime.date, 해당 날짜 문자열 디렉토리 경로로 이뤄진 
+            튜플들의 리스트로 반환됨.
+            
         """
         leaf_entities = get_all_in_rootdir(root_dir)
         dirs_list = []
         for entity in leaf_entities:
             if os.path.isdir(entity):
-                dirs_list.append(entity)
-        ...
+                date_str = os.path.basename(entity)
+                date_type = self.isDateStr(date_str)
+                if date_type:
+                    dirs_list.append(
+                        (
+                            date_type,
+                            self.convertStrToDate(date_str),
+                            entity
+                        )
+                    )
+        dirs_list.sort(key=itemgetter(1))
+        return dirs_list
