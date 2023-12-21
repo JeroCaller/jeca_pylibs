@@ -311,7 +311,7 @@ def process_exp_res(
         datetype: DateOptions.DateType
     ) -> (list[tuple[int, str, str]]):
     """
-    data : list[tuple[expected_result_str, real_data_str]]
+    data : list[tuple[datetime.date.isoformat(), real_data_str]]
     ex) data = [
         ('2023-12-01', '2023-12-1'), ...
     ]
@@ -331,6 +331,8 @@ class TestSearchDateDir(unittest.TestCase):
     datedir_made: bool = False
 
     def setUp(self):
+        self.maxDiff = None
+
         self.datetool = DateTools()
         self.d_opt = DateOptions()
 
@@ -343,9 +345,15 @@ class TestSearchDateDir(unittest.TestCase):
             '010-5-10', '010-1234-5678', '2023-11-31', 
             '2023-12-', '2023-12-1', '2023-12-04', 
             '2023-12-21', '2023-12-21-', '2023-12-31',
-            '2024-1-1', '2024-12-21'
+            '2024-1-1', '2024-12-21', '2024-01-01'
         ]
-        self.week_dates = [...]
+        self.week_dates = [
+            '2023-12-01주', '2023-12-1주', '-2023-12-1주',
+            '강동6주', '강동-6주', '2023-12-6주', 
+            '1-1-3주', '001-1-2주', '2023-8-주',
+            '2024-1-3주-', '2023-5-0주', '2023-11-5주',
+            '2023-11-1주', '2023-10-05주',
+        ]
         self.month_dates = [...]
         self.year_dates = [...]
         dates = [
@@ -357,6 +365,7 @@ class TestSearchDateDir(unittest.TestCase):
 
         if not TestSearchDateDir.datedir_made:
             make_datedirs(self.day_root_dir, self.day_dates)
+            make_datedirs(self.week_root_dir, self.week_dates)
             ...
             TestSearchDateDir.datedir_made = True
 
@@ -370,6 +379,7 @@ class TestSearchDateDir(unittest.TestCase):
             ('2023-12-04', '2023-12-04'),
             ('2023-12-21', '2023-12-21'),
             ('2023-12-31', '2023-12-31'),
+            ('2024-01-01', '2024-01-01'),
             ('2024-01-01', '2024-1-1'),
             ('2024-12-21', '2024-12-21'),
         ]
@@ -377,6 +387,31 @@ class TestSearchDateDir(unittest.TestCase):
             expected_data, self.day_root_dir, self.d_opt.DAY
         )
         self.assertEqual(results, expected_results)
+
+    def testWeek(self):
+        results = process_real_data(
+            self.datetool.searchDateDir(self.week_root_dir)
+        )
+        expected_data = [
+            ('0001-01-08', '001-1-2주'),
+            ('0001-01-15', '1-1-3주'),
+            ('2023-10-30', '2023-10-05주'),
+            ('2023-11-01', '2023-11-1주'),
+            ('2023-11-27', '2023-11-5주'),
+            ('2023-12-04', '2023-12-01주'),
+            ('2023-12-04', '2023-12-1주'),
+        ]
+        expected_results = process_exp_res(
+            expected_data, self.week_root_dir, self.d_opt.WEEK
+        )
+        self.assertEqual(len(results), len(expected_results))
+        self.assertEqual(results, expected_results)
+
+    def testMonth(self):
+        ...
+
+    def testYear(self):
+        ...
 
 if __name__ == '__main__':
     unittest.main()

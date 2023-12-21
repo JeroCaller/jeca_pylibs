@@ -246,7 +246,8 @@ class DateTools():
         않는 날짜여도 해당 문자열을 날짜 형태 문자열로 인식하지 않는다. 
         정해진 날짜 형태를 만족하려면 다음의 조건들을 만족해야 한다.
 
-        1. 일수의 경우 1 <= day <= 31을 만족해야 한다.
+        1. 일수의 경우 1 <= day <= 31을 만족해야 한다. 단, 특정 년, 월의 
+        마지막 일수 이내의 범위여야 한다.
         2. 월의 경우 1 <= month <= 12을 만족해야 한다.
         3. 연도의 경우, datetime.MINYEAR <= year <= datetime.MAXYEAR을 
         만족해야 한다. 
@@ -475,3 +476,6 @@ class DateTools():
                     )
         dirs_list.sort(key=itemgetter(1))
         return dirs_list
+
+if __name__ == '__main__':
+    pass
