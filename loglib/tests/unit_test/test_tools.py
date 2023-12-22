@@ -354,8 +354,17 @@ class TestSearchDateDir(unittest.TestCase):
             '2024-1-3주-', '2023-5-0주', '2023-11-5주',
             '2023-11-1주', '2023-10-05주',
         ]
-        self.month_dates = [...]
-        self.year_dates = [...]
+        self.month_dates = [
+            '2023-12', '0023-01', '2032-1', '-2023-12',
+            '2023-12-', '2023-13', '2023-00', '2032-01',
+            '1-1',
+        ]
+        self.year_dates = [
+            '2023', '2022', '2024', '10000', '-1', '0023', 
+            '23', str(datetime.MINYEAR - 1), 
+            str(datetime.MAXYEAR + 1), '-2024', '20-23',
+            '02021',
+        ]
         dates = [
             self.day_dates, self.week_dates, 
             self.month_dates, self.year_dates
@@ -366,7 +375,8 @@ class TestSearchDateDir(unittest.TestCase):
         if not TestSearchDateDir.datedir_made:
             make_datedirs(self.day_root_dir, self.day_dates)
             make_datedirs(self.week_root_dir, self.week_dates)
-            ...
+            make_datedirs(self.month_root_dir, self.month_dates)
+            make_datedirs(self.year_root_dir, self.year_dates)
             TestSearchDateDir.datedir_made = True
 
     def testDay(self):
@@ -408,10 +418,39 @@ class TestSearchDateDir(unittest.TestCase):
         self.assertEqual(results, expected_results)
 
     def testMonth(self):
-        ...
+        results = process_real_data(
+            self.datetool.searchDateDir(self.month_root_dir)
+        )
+        expected_data = [
+            ('0001-01-01', '1-1'),
+            ('0023-01-01', '0023-01'),
+            ('2023-12-01', '2023-12'),
+            ('2032-01-01', '2032-01'),
+            ('2032-01-01', '2032-1'),
+        ]
+        expected_results = process_exp_res(
+            expected_data, self.month_root_dir, self.d_opt.MONTH
+        )
+        self.assertEqual(len(results), len(expected_results))
+        self.assertEqual(results, expected_results)
 
     def testYear(self):
-        ...
+        results = process_real_data(
+            self.datetool.searchDateDir(self.year_root_dir)
+        )
+        expected_data = [
+            ('0023-01-01', '0023'),
+            ('0023-01-01', '23'),
+            ('2021-01-01', '02021'),
+            ('2022-01-01', '2022'),
+            ('2023-01-01', '2023'),
+            ('2024-01-01', '2024'),
+        ]
+        expected_results = process_exp_res(
+            expected_data, self.year_root_dir, self.d_opt.YEAR
+        )
+        self.assertEqual(len(results), len(expected_results))
+        self.assertEqual(results, expected_results)
 
 if __name__ == '__main__':
     unittest.main()
