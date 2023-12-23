@@ -5,6 +5,7 @@ import datetime
 import calendar
 import os
 import random
+from operator import itemgetter
 
 from dirimporttool import get_super_dir_directly
 
@@ -281,6 +282,34 @@ class TestDateTools(unittest.TestCase):
             result = self.datetool.convertStrToDate(d)
             self.assertEqual(result, None)
 
+    def testConvertStrIntoDatetime(self):
+        # test 1
+        data = '2023-12-23-13:24:11'
+        result = self.datetool.convertStrToDatetime(data)
+        self.assertIsInstance(result, datetime.datetime)
+        self.assertEqual(result.year, 2023)
+        self.assertEqual(result.month, 12)
+        self.assertEqual(result.day, 23)
+        self.assertEqual(result.hour, 13)
+        self.assertEqual(result.minute, 24)
+        self.assertEqual(result.second, 11)
+
+        # test 2
+        data = '0001-01-01-00:00:00'
+        result = self.datetool.convertStrToDatetime(data)
+        self.assertIsInstance(result, datetime.datetime)
+
+        # test 3
+        data = '2023-12-23-11:30:00'
+        result = self.datetool.convertStrToDatetime(data)
+        self.assertIsInstance(result, datetime.datetime)
+
+        # test 4
+        data = '2023-12-23-25:61:00'
+        with self.assertRaises(ValueError):
+            result = self.datetool.convertStrToDatetime(data)
+
+
 # ==== TestSearchDateDir() 테스트 클래스에 쓰일 함수들
 def make_datedirs(root_dir: str, datedirs: list[str]):
     """테스트를 위한 날짜 디렉토리 생성 함수.
@@ -317,7 +346,6 @@ def process_exp_res(
     ]
     """
     work_done = []
-    rootdir = os.path.abspath(rootdir)
     for exre, datedir in data:
         fullpath = os.path.join(rootdir, datedir)
         tup = (datetype, exre, fullpath)
@@ -451,6 +479,44 @@ class TestSearchDateDir(unittest.TestCase):
         )
         self.assertEqual(len(results), len(expected_results))
         self.assertEqual(results, expected_results)
+
+
+class TestSearchDateDirBirth(unittest.TestCase):
+    """DateTools.searchDateDirBirth() 메서드 테스트 클래스."""
+    tried: bool = False
+    has_real_dirs: bool = False
+
+    def setUp(self):
+        self.datetool = DateTools()
+
+        self.logfile_basedir = r'..\fixtures\testpkg\logfiles_day'
+
+        if not TestSearchDateDirBirth.tried:
+            # self.logfile_basedir로 지정된 경로가 실제로 존재하고 그 안에 
+            # 실제 날짜 디렉토리들이 존재할 경우에만 특정 테스트를 실행하도록 세팅함.
+            if os.path.isdir(self.logfile_basedir):
+                TestSearchDateDirBirth.has_real_dirs = True
+            TestSearchDateDirBirth.tried = True
+
+    def testWithRealDirs(self):
+        """실제 생성 일시에 적어도 하루 이상 차이나는 날짜 디렉토리들에 
+        대한 테스트. 
+        지정된 경로가 없을 경우 이 테스트는 스킵됨.
+        """
+        if not TestSearchDateDirBirth.has_real_dirs:
+            self.skipTest('테스트를 위한 루트 디렉토리가 실존하지 않아 스킵됨.')
+        
+        results = self.datetool.searchDateDirBirth(self.logfile_basedir)
+        ex_re = results.copy()
+        ex_re.sort(key=itemgetter(1))
+        self.assertEqual(results, ex_re)
+
+        for tup in results:
+            self.assertEqual(
+                tup[1].date().isoformat(), 
+                os.path.basename(tup[2])
+            )
+
 
 if __name__ == '__main__':
     unittest.main()

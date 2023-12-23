@@ -6,7 +6,10 @@ import heapq
 try:
     from sub_modules.my_queue import DynamicQueue
 except ModuleNotFoundError:
-    from my_queue import DynamicQueue
+    try:
+        from my_queue import DynamicQueue
+    except ModuleNotFoundError:
+        from .my_queue import DynamicQueue
 
 
 # type aliases

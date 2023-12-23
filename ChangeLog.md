@@ -1,6 +1,18 @@
 changelog
 ---
 - - -
+> 2023-12-23
+> - loglib
+> - 코드 오류 수정.
+> - logpackage.py
+>   - 로그 파일을 보관하는 날짜 디렉토리 개수 제한 메서드 설계 변경. 
+(LogFileManager.rotateDateDirs() 메서드)
+> - tools.py, test_tools.py
+>   - LogFileManager.rotateDateDirs() 메서드에 사용될 부분 기능 개발.
+>       - searchDateDir()의 내부 코드 수정. searchDateDirBirth()로 정해진 날짜 포맷 형식을 만족하는 이름을 가지는 날짜 디렉토리들의 생성 시각도 검색하는 기능 개발. 기존에 날짜 디렉토리명에서 날짜를 추출하여 날짜순으로 정렬하는 코드인 searchDateDir()는 '2100-01-01'과 같은 이름을 가지는 날짜 디렉토리들이 삽입되는 경우 의도와 다른 결과가 나올 수 있어 이를 디렉토리의 생성 시각을 직접 가져오는 방식인 searchDateDirBirth() 메서드 코드로 수정함. 
+>       - 위 메서드들에 사용될 convertStrToDatetime() 메서드 구현. 
+>   - 위에 언급된 메서드들을 테스트할 코드 추가 및 테스트 실행 -> 테스트 성공. 추후 테스트 코드 추가 예정.
+
 > 2023-12-22
 > - loglib
 > - test_tools.py 

@@ -1334,35 +1334,36 @@ class LogFileManager():
         if count_removed == 0: return False
         return True
 
-    def setTimeInterval(
+    def rotateDateDirs(
             self,
-            datetype: tools.DateOptions.DateType,
-            date_interval: int,
-            mode: str
+            maxdir: int = 10
         ):
-        """특정 기간 이상 지난 로그 파일 디렉토리들을 삭제하거나 
-        해당 디렉토리 내의 로그 파일의 내용만을 지우는 기능의 메서드.
-        이 메서드를 실행하는 날짜를 기준으로 한다. 
+        """베이스 디렉토리 내 로그 파일 기록용 날짜 디렉토리들의 
+        개수를 제한하는 메서드. 
 
+        만약 날짜 디렉토리 개수가 지정된 개수를 넘을 경우 가장 
+        오래된 날짜 디렉토리와 그 안의 모든 로그 파일들을 자동으로 삭제한다. 
+        이는 새로운 날짜 디렉토리가 생성될 때도 마찬가지로 적용된다. 
+        tools.py의 DateTools 클래스가 인식할 수 있는 날짜 문자열을 가진 
+        디렉토리들에 대해서만 해당 작업이 가능.
+
+        인식 가능한 날짜 문자열 형식)
+        DAY : 'YYYY-MM-DD'
+        WEEK : 'YYYY-MM-N주'
+        MONTH : 'YYYY-MM'
+        YEAR : 'YYYY'
+
+        만약 베이스 디렉토리 내 날짜 디렉토리들의 날짜 형태가 섞여 있다면, 
+        모든 날짜 디렉토리명의 날짜 문자열들을 'YYYY-MM-DD' 형태로 변환한 뒤,
+        가장 오래된 날짜 문자열을 가진 디렉토리를 삭제한다. 
+        만약 둘 이상의 같은 날짜가 감지되면, 디렉토리명의 알파벳 순으로 삭제한다. 
+        
         Parameters
         ----------
-        datetype : tools.DateOptions.DateType
-            일, 월, 년, 주별 중 하나를 선택.
-        date_interval : int
-            기간 선택. datetype에 맞춰 작성.
-        mode : LogFileManager.DELETE_MODE | LogFileManager.ERASE_MODE
-            삭제할 것인지 내용만 지울 것인지 선택하는 매개변수. 
-            이 클래스 LogFileManager에 정의된 클래스 상수 DELETE_MODE, 
-            ERASE_MODE들 중 하나를 선택하여 대입.
+        maxdir : int, default 10
+            베이스 디렉토리 내에 남길 날짜 디렉토리의 개수. 
         
         """
-        # 만약 베이스 디렉토리 내에 날짜별 디렉토리는 없고 로그 파일만 
-        # 있는 경우에도 똑같이 수행되도록 할 예정.
-        # 기간 정보는 json 파일에 저장하여 활용할 예정.
-        ...
-
-    def resetTimeInterval(self):
-        """setTimeInterval() 메서드를 통해 기간 설정한 것을 무효화한다."""
         ...
 
     def zipDateDir(

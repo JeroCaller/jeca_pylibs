@@ -13,7 +13,10 @@ from typing import TypeAlias
 try:
     from tree import PathTree
 except ModuleNotFoundError:
-    from sub_modules.tree import PathTree
+    try:
+        from sub_modules.tree import PathTree
+    except ModuleNotFoundError:
+        from .tree import PathTree
 
 # type aliases
 Path: TypeAlias = str  # entity의 경로.
