@@ -5,6 +5,7 @@ import datetime
 import calendar
 import os
 import random
+import time
 from operator import itemgetter
 
 from dirimporttool import get_super_dir_directly
@@ -481,22 +482,104 @@ class TestSearchDateDir(unittest.TestCase):
         self.assertEqual(results, expected_results)
 
 
+# TestSearchDateDirBirth 클래스에서의 테스트를 위한 함수들
+def make_datedirs_with_delay(
+        root_dir: str, 
+        sleep_date: list[tuple[int, str]],
+        allow_print: bool = True
+    ):
+    """디렉토리 생성 시 디렉토리 생성 시각도 테스트 요소이기에 
+    time.sleep() 함수를 이용하여 일부러 생성 시간을 딜레이 시키도록 함.
+
+    Parameters
+    ----------
+    root_dir : str
+        날짜 디렉토리들을 생성할 루트 디렉토리의 경로
+    sleep_date : list[tuple[sec, date_dirname]]
+        날짜 디렉토리 생성 지연 시간과 해당 날짜 디렉토리명을 묶은 데이터.
+    
+    """
+    if allow_print:
+        print("테스트를 위한 디렉토리 생성 중... 시간이 다소 걸립니다.")
+        print("생성된 디렉토리 목록.")
+    
+    count_makedir = 0  # 날짜 디렉토리 생성 개수.
+    for t, datedir in sleep_date:
+        fullpath = os.path.join(root_dir, datedir)
+        if os.path.isdir(fullpath):
+            continue # 이미 존재하는 디렉토리를 재생성하지 않도록 한다.
+        time.sleep(t)
+        os.mkdir(fullpath)
+        print(fullpath)
+        count_makedir += 1
+    
+    if allow_print:
+        print(f"생성 완료. 총 {count_makedir}개 생성됨.")
+        print("이미 존재하는 디렉토리는 새로 생성되지 않습니다.")
+
+def process_data_no_datetime(data):
+    """searchDateDir(), searchDateDirBirth() 메서드 결과를 가공하는 함수.
+    가운데 date(), datetime() 객체 요소는 제거, 맨 마지막의 경로 요소는 디렉토리명만 
+    남도록 가공.
+
+    Parameters
+    ---------
+    data : DateTools().searchDateDir() | DateTools().searchDateDirBirth()
+
+    Returns
+    -------
+    list[tuple[DateOptions().DateType, date_str]]
+
+    """
+    new_result = []
+    for tup in data:
+        tup = (tup[0], os.path.basename(tup[-1]))
+        new_result.append(tup)
+    return new_result
+
+# =================
+
 class TestSearchDateDirBirth(unittest.TestCase):
     """DateTools.searchDateDirBirth() 메서드 테스트 클래스."""
-    tried: bool = False
+    access_tried: bool = False
     has_real_dirs: bool = False
+
+    made_testdirs: bool = False
 
     def setUp(self):
         self.datetool = DateTools()
+        self.dopt = DateOptions()
 
+        # 실제 생성 시각이 하루 이상 차이나는 디렉토리 대상 테스트를 위한 설정.
         self.logfile_basedir = r'..\fixtures\testpkg\logfiles_day'
 
-        if not TestSearchDateDirBirth.tried:
+        if not TestSearchDateDirBirth.access_tried:
             # self.logfile_basedir로 지정된 경로가 실제로 존재하고 그 안에 
             # 실제 날짜 디렉토리들이 존재할 경우에만 특정 테스트를 실행하도록 세팅함.
             if os.path.isdir(self.logfile_basedir):
                 TestSearchDateDirBirth.has_real_dirs = True
-            TestSearchDateDirBirth.tried = True
+            TestSearchDateDirBirth.access_tried = True
+        # ========
+
+        # 테스트를 위해 임의로 날짜 디렉토리들을 형성하기 위한 초기 설정.
+        self.datedirs_rootdir = r'..\fixtures\datedirbirth'
+        self.fixtures = [
+            (0, '2023-12-24'),
+            (1, '2023-12-25'),
+            (3, '2023-12-32'),
+            (2, '2024-01-01'),
+            (1, '2024-01-2'),
+            (2, '2123-02-03'),
+            (1, '2024-01-5주'),
+            (3, '2024-2'),
+            (2, '2025'),
+            (1, '2022-01-01'),
+        ]
+        if not TestSearchDateDirBirth.made_testdirs:
+            make_datedirs_with_delay(
+                self.datedirs_rootdir, self.fixtures, False
+            )
+            TestSearchDateDirBirth.made_testdirs = True
 
     def testWithRealDirs(self):
         """실제 생성 일시에 적어도 하루 이상 차이나는 날짜 디렉토리들에 
@@ -506,16 +589,52 @@ class TestSearchDateDirBirth(unittest.TestCase):
         if not TestSearchDateDirBirth.has_real_dirs:
             self.skipTest('테스트를 위한 루트 디렉토리가 실존하지 않아 스킵됨.')
         
+        # 결과가 정말로 디렉토리 생성 시각순으로 정렬되어 있는가에 대한 테스트.
         results = self.datetool.searchDateDirBirth(self.logfile_basedir)
         ex_re = results.copy()
         ex_re.sort(key=itemgetter(1))
         self.assertEqual(results, ex_re)
 
+        # 디렉토리명으로 쓰인 날짜 문자열의 날짜와 실제 생성 일자가 같은지 확인.
         for tup in results:
             self.assertEqual(
                 tup[1].date().isoformat(), 
                 os.path.basename(tup[2])
             )
+
+    def testDirBirth(self):
+        """디렉토리 생성 시각별로 데이터들이 정렬되는지 확인하는 테스트."""
+        results = self.datetool.searchDateDirBirth(self.datedirs_rootdir)
+        processed_result = process_data_no_datetime(results)
+
+        # test 1
+        # list[tuple[DateOptions.DateType, basename(datedirpath)]]
+        ex_re = [
+            (self.dopt.DAY, '2023-12-24'),
+            (self.dopt.DAY, '2023-12-25'), 
+            (self.dopt.DAY, '2024-01-01'),
+            (self.dopt.DAY, '2024-01-2'),
+            (self.dopt.DAY, '2123-02-03'),
+            (self.dopt.WEEK, '2024-01-5주'),
+            (self.dopt.MONTH, '2024-2'),
+            (self.dopt.YEAR, '2025'),
+            (self.dopt.DAY, '2022-01-01'),
+        ]
+        for i, data in enumerate(results):
+            dtype, dtime, p = data
+            pbase = os.path.basename(p)
+            self.assertEqual(dtype, ex_re[i][0])
+            self.assertEqual(pbase, ex_re[i][1])
+        self.assertEqual(processed_result, ex_re)
+
+        # test 2
+        # 실제 디렉토리의 생성 시각과 디렉토리명인 날짜 문자열의 날짜가 
+        # 서로 불일치할 경우, 해당 메서드가 실제 생성 시각순으로 정렬하는지
+        # 확인하기 위한 테스트. 
+        datedirname_sorted = self.datetool.searchDateDir(self.datedirs_rootdir)
+        processed_result = process_data_no_datetime(datedirname_sorted)
+        self.assertEqual(len(ex_re), len(processed_result))
+        self.assertNotEqual(ex_re, processed_result)
 
 
 if __name__ == '__main__':
