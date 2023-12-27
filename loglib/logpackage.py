@@ -1318,8 +1318,11 @@ class LogFileManager():
         if not os.path.isdir(date_dir_fullpath): return False
 
         if delete_dir:
-            shutil.rmtree(date_dir_fullpath)
-            return True
+            if dirs.validate_if_your_dir_with_ext(
+                date_dir_fullpath, ['.log'])[0]:
+                shutil.rmtree(date_dir_fullpath)
+                return True
+            return False
 
         all_leaf_fds = dirs.get_all_in_rootdir(date_dir_fullpath)
         count_removed = 0
@@ -1364,7 +1367,26 @@ class LogFileManager():
             베이스 디렉토리 내에 남길 날짜 디렉토리의 개수. 
         
         """
-        ...
+        data = tools.DateTools().searchDateDirBirth(self.base_dir_path)
+        if data is None:
+            err_msg = """로그 파일들을 보관, 관리하는 베이스 디렉토리의 경로가 
+            검색되지 않았습니다. 초기에 베이스 디렉토리 경로를 설정하지 않았거나 
+            잘못된 경로를 설정했습니다. setBaseDirPath() 메서드를 통해 대상 
+            베이스 디렉토리 경로를 설정해주세요. 
+            """
+            raise logexc.NotInitConfigError(err_msg)
+        
+        temp = []
+        for dtype, dtime, dpath in data:
+            if dirs.validate_if_your_dir_with_ext(dpath, ['.log'])[0]:
+                temp.append((dtype, dtime, dpath))
+        data = temp.copy()
+        
+        diff = maxdir - len(data)
+        if diff < 0:
+            for i in range(-diff):
+                dirpath = data[i][-1]
+                shutil.rmtree(dirpath)
 
     def zipDateDir(
             self,

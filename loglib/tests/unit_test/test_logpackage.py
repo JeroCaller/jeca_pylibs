@@ -12,9 +12,7 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
-_LoggerPathTree, _LoggerHierarchy, PackageLogger, 
-EasySetLogFileEnv
-)
+_LoggerPathTree, _LoggerHierarchy, EasySetLogFileEnv)
 # 모듈 수준 정의 상수 import
 from logpackage import (LOGGERTREE, LoggerLevel, 
 DEFAULT_LEVEL_LOG_FILE_NAMES

@@ -541,7 +541,7 @@ class DateTools():
     def searchDateDirBirth(
             self,
             root_dir: str
-        ) -> (list[tuple[DateOptions.DateType, datetime.datetime, str]]):
+        ) -> (list[tuple[DateOptions.DateType, datetime.datetime, str]] | None):
         """루트 폴더 내에 DateOptions 클래스 내 정의된 날짜 분류별 
         날짜 형식을 가지는 날짜 문자열을 이름으로 하는 모든 하위 디렉토리들을 
         검색하고 해당 디렉토리들의 최초 생성 시간별 오름차순 정렬하여 반환한다. 
@@ -568,6 +568,8 @@ class DateTools():
         list[tuple[DateOptions.DateType, datetime.datetime, str]]
             차례대로 DateOptions.DateType, datetime.datetime, 
             해당 날짜명을 가지는 디렉토리의 경로로 이뤄진 튜플들의 리스트를 반환.
+        None
+            root_dir 매개변수로 입력된 루트 폴더 경로가 존재하지 않을 경우.
 
         """
         try:

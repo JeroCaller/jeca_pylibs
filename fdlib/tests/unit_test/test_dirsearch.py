@@ -77,5 +77,69 @@ class TestDirSearch(unittest.TestCase):
             self.assertEqual(path, self.fixture_path[i])
 
 
+class TestValidateIfDir(unittest.TestCase):
+    """validate_if_your_dir_with_ext() 함수 테스트."""
+    def setUp(self):
+        self.fixt_dirs_path = [
+            r'..\fixtures\validatedirs\dir1',
+            r'..\fixtures\validatedirs\dir2',
+            r'..\fixtures\validatedirs\dir3',
+            r'..\fixtures\validatedirs\2023-12-24',
+        ]
+
+    def testValidateIfDir(self):
+        # test 1
+        is_valid, no_allowed = dirs.validate_if_your_dir_with_ext(
+            root_dir=self.fixt_dirs_path[0],
+            include=['.txt', '.log'],
+            not_include_ok=True
+        )
+        self.assertTrue(is_valid)
+        self.assertEqual(no_allowed, [])
+
+        # test 2
+        is_valid, no_allowed = dirs.validate_if_your_dir_with_ext(
+            self.fixt_dirs_path[1],
+            ['.txt', '.log'],
+        )
+        self.assertEqual(is_valid, False)
+        self.assertEqual(no_allowed, ['how_to_use_sample.jpg'])
+
+        # test 3
+        is_valid, no_allowed = dirs.validate_if_your_dir_with_ext(
+            self.fixt_dirs_path[2],
+            ['.txt'],
+            dir_include_ok=True
+        )
+        self.assertEqual(is_valid, True)
+        self.assertEqual(no_allowed, [])
+
+        # test 4
+        is_valid, no_allowed = dirs.validate_if_your_dir_with_ext(
+            self.fixt_dirs_path[1],
+            ['.txt', '.log', '.png'],
+            not_include_ok=False
+        )
+        self.assertEqual(is_valid, False)
+        self.assertEqual(no_allowed, ['how_to_use_sample.jpg', 'no .png'])
+
+        # test 5
+        is_valid, no_allowed = dirs.validate_if_your_dir_with_ext(
+            self.fixt_dirs_path[2],
+            ['.txt'],
+            dir_include_ok=False
+        )
+        self.assertEqual(is_valid, False)
+        self.assertEqual(no_allowed, ['log'])
+
+        # test 6
+        is_valid, no_allowed = dirs.validate_if_your_dir_with_ext(
+            self.fixt_dirs_path[3],
+            ['.log']
+        )
+        self.assertEqual(is_valid, False)
+        self.assertEqual(no_allowed, ['hi.txt'])
+
+
 if __name__ == '__main__':
     unittest.main()
