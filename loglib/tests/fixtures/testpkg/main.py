@@ -12,7 +12,8 @@ c_dir = get_current_absdir(__file__)
 sys.path.append(c_dir)
 
 from logpackage import (PackageLogger, 
-EasySetLogFileEnv, LogFuncEndPoint, DetectErrorAndLog)
+EasySetLogFileEnv, LogFuncEndPoint, DetectErrorAndLog, 
+LogFileManager)
 
 from pm import PlusMinus
 from subdir.md import MultiDivide
@@ -27,7 +28,9 @@ program_start_end_logger = main_pl.getInfoLogger('program_start_end_logger')
 def mainfunc(
         log_env_obj: EasySetLogFileEnv, 
         raise_error_log: bool = False,
-        print_result: bool = True
+        print_result: bool = True,
+        log_file_manager: LogFileManager | None = None,
+        limit_datedir_num: int = 3
     ):
     """
     Parameters
@@ -66,6 +69,9 @@ def mainfunc(
         print(md_result)
 
     main_pl.logAllLoggersTree()
+
+    if log_file_manager:
+        log_file_manager.rotateDateDirs(limit_datedir_num)
 
 if __name__ == '__main__':
     pass

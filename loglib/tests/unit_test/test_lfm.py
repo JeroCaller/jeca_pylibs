@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import shutil
+import json
 
 from dirimporttool import get_super_dir_directly
 
@@ -12,10 +13,13 @@ for i in range(1, 2+1):
     super_dir = get_super_dir_directly(__file__, i)
     sys.path.append(super_dir)
 
-from logpackage import LogFileManager
+from logpackage import LogFileManager, EasySetLogFileEnv
+from logpackage import DEFAULT_LEVEL_LOG_FILE_NAMES
 from sub_modules.fdhandler import TextFileHandler
-from sub_modules.dirsearch import validate_if_your_dir_with_ext
+from sub_modules.dirsearch import (validate_if_your_dir_with_ext,
+get_all_in_rootdir)
 from tools import DateTools, DateOptions
+from tests.fixtures.testpkg.main import mainfunc
 
 def make_entities_with_delay(
         root_dir: str, 
@@ -77,9 +81,111 @@ def datedir_without_datetime(data):
             result.append((dtype, datestr))
     return result
 
+def get_datedir_path(leaf_entities: list[str]) -> (list[str]):
+    """특정 루트 디렉토리 내 하위 디렉토리와 그 안의 파일들의 경로들을 
+    리스트로 받아왔을 때, 각 파일들의 디렉토리 경로를 추출하여 리스트로 반환.
+    이 때, 경로가 겹치면 중복되는 경로들은 추가하지 않은 상태로 반환된다.
 
-class TestRotateDirs(unittest.TestCase):
-    """rotateDateDirs() 메서드 테스트 클래스."""
+    Parameters
+    ----------
+    leaf_entities : list[str(dirpath)]
+        get_all_in_rootdir() 리턴값
+    
+    """
+    results = []
+    for en in leaf_entities:
+        dirpath = os.path.dirname(en)
+        if dirpath not in results:
+            results.append(dirpath)
+    return results
+
+def get_datedir_filenames(leaf_entities: list[str]):
+    """루트 디렉토리 내 하위 디렉토리 내 파일들의 경로를 받았을 때 
+    날짜 디렉토리와 그 디렉토리 아래 파일들의 이름을 아이템으로 하는 
+    딕셔너리 반환 함수.
+
+    Parameters
+    ----------
+    leaf_entities : list[str(dirpath)]
+        get_all_in_rootdir() 리턴값
+
+    Returns
+    ------
+    dict[str, list[str]]
+        dict[날짜 디렉토리명, [해당 디렉토리 내 파일명 리스트]]
+    
+    """
+    results: dict[str, list[str]] = {}  # dict[datedir: list[filenames]]
+    for en in leaf_entities:
+        if not os.path.isfile(en): continue
+        
+        datedir = os.path.basename(os.path.dirname(en))
+        filename = os.path.basename(en)
+        if datedir not in results:
+            results[datedir] = [filename]
+        elif filename not in results[datedir]:
+            results[datedir].append(filename)
+    return results
+
+def record_deleted_datedir(
+        prev_json_path: str, 
+        target_basedir: str,
+        del_txt_path: str,
+        limit_datedirs_num: int
+    ):
+    """rotate 기능이 적용된 로그 파일 저장 베이스 디렉토리 내
+    삭제된 날짜 디렉토리명을 기록하는 함수.
+
+    Parameters
+    ----------
+    prev_json_path : str
+        이전 날짜 디렉토리명들을 기록할 json 파일명 (경로 포함)
+    target_basedir : str
+        베이스 디렉토리 경로
+    del_txt_path : str
+        여태까지 삭제된 날짜 디렉토리명을 기록할 텍스트 파일명. (경로 포함)
+    limit_datedirs_num : int
+        보관할 날짜 디렉토리 제한 수.
+    
+    """
+    tfh = TextFileHandler(del_txt_path)
+
+    # == 주어진 경로에 파일이 없을 때 자동 생성 ==
+    if not os.path.exists(del_txt_path):
+        dirname = os.path.dirname(del_txt_path)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
+        tfh.createTxtFile()
+
+    cur_datedirs = os.listdir(target_basedir)
+    
+    if not os.path.exists(prev_json_path):
+        dirname = os.path.dirname(prev_json_path)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
+        with open(prev_json_path, 'w', encoding='utf-8') as f:
+            json.dump(cur_datedirs, f, indent=4)
+        return
+    # =========
+
+    with open(prev_json_path, 'r', encoding='utf-8') as f:
+        prev_datedirs: list[str] = json.load(f)
+
+    cur_only = list(set(cur_datedirs) - set(prev_datedirs))
+    prev_only = list(set(prev_datedirs) - set(cur_datedirs))
+    if len(prev_datedirs) < limit_datedirs_num:
+        prev_datedirs.extend(cur_only)
+    else:
+        tfh.appendText('\n' + prev_only[0])
+        prev_datedirs.remove(prev_only[0])
+        prev_datedirs.append(cur_only[0])
+    
+    with open(prev_json_path, 'w', encoding='utf-8') as f:
+        json.dump(prev_datedirs, f, indent=4)
+
+
+class TestRotateDirsUnittest(unittest.TestCase):
+    """rotateDateDirs() 메서드 유닛테스트 클래스."""
     made_test_ent: bool = False
 
     def setUp(self):
@@ -104,9 +210,9 @@ class TestRotateDirs(unittest.TestCase):
             (1, r'2022-01-01\logger_tree.log'),
             (0, r'2023-12-24\hi.txt')
         ]
-        if not TestRotateDirs.made_test_ent:
+        if not TestRotateDirsUnittest.made_test_ent:
             make_entities_with_delay(self.rootdir, self.fixtures)
-            TestRotateDirs.made_test_ent = True
+            TestRotateDirsUnittest.made_test_ent = True
 
         self.lfm = LogFileManager(self.rootdir)
         self.dtool = DateTools()
@@ -139,6 +245,99 @@ class TestRotateDirs(unittest.TestCase):
             fullpath = os.path.join(self.rootdir, d)
             does_it_exists = os.path.exists(fullpath)
             self.assertTrue(does_it_exists)
+
+
+class InitLogConfig():
+    def __init__(self, dateopt: DateOptions):
+        self.base_dir_location = r'..\fixtures\testpkg'
+        if dateopt == DateOptions.DAY:
+            self.base_dir_name_date = 'logfile_rot_day'
+        elif dateopt == DateOptions.WEEK:
+            self.base_dir_name_date = 'logfile_rot_week'
+        elif dateopt == DateOptions.MONTH:
+            self.base_dir_name_date = 'logfile_rot_month'
+        elif dateopt == DateOptions.YEAR:
+            self.base_dir_name_date = 'logfile_rot_year'
+
+        self.init_log_env = EasySetLogFileEnv()
+        self.init_log_env.setEssentialLogEnv(
+            base_dir=self.base_dir_location,
+            base_dir_name=self.base_dir_name_date,
+            level_option=True,
+            date_opt=dateopt
+        )
+        self.basedir = self.init_log_env.base_dir  # 외부 이용 용도.
+        self.log_fm = LogFileManager(self.basedir)
+
+    def setup(
+            self,
+            test_classname: unittest.TestCase,
+            on_error_log: bool,
+            limit_datedir_num: int
+        ):
+        # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
+        if not test_classname.main_init:
+            mainfunc(
+                self.init_log_env,
+                raise_error_log=on_error_log,
+                print_result=False,
+                log_file_manager=self.log_fm,
+                limit_datedir_num=limit_datedir_num
+            )
+            test_classname.main_init = True
+
+
+class TestRotateDirLog(unittest.TestCase):
+    """rotateDateDirs() 메서드 테스트. 
+    테스트 fixture 패키지 내 실제 로깅 과정에서 사용하여 
+    실제 해당 메서드가 잘 작동하는지 테스트. 
+
+    제대로 된 테스트를 위해 실제 로깅 날짜에 따라 날짜 디렉토리를 생성, 보관하므로, 
+    제대로 된 테스트를 위해선 며칠 이상 매일 이 테스트 코드를 실행시켜야 함.
+
+    """
+    main_init: bool = False
+
+    def setUp(self):
+        self.json_path_day = r'..\fixtures\datedirrecord\day.json'
+        self.del_rec_txt_path_day = r'..\fixtures\datedirrecord\day.txt'
+        self.dopt = DateOptions()
+
+        self.initconfigday = InitLogConfig(self.dopt.DAY)
+        self.datedir_day_num = 3
+        self.initconfigday.setup(
+            TestRotateDirLog, False, self.datedir_day_num
+        )
+
+    def testDateDirsDay(self):
+        leaf_entities = get_all_in_rootdir(self.initconfigday.basedir)
+        datedirs = get_datedir_path(leaf_entities)
+        if len(datedirs) < self.datedir_day_num:
+            self.skipTest('테스트를 위한 데이터가 충분하지 않아 스킵됩니다.')
+
+        # 현재 베이스 디렉토리 내 삭제된 날짜 디렉토리명을 기록.
+        record_deleted_datedir(
+            self.json_path_day,
+            self.initconfigday.basedir,
+            self.del_rec_txt_path_day,
+            self.datedir_day_num
+        )
+        
+        # 전체 날짜 디렉토리 개수 확인.
+        logfiles = get_datedir_filenames(leaf_entities)
+        self.assertEqual(len(datedirs), self.datedir_day_num)
+
+        # 각 날짜 디렉토리 안에 존재해야할 로그 파일들이 있는지 확인.
+        ex_re = sorted(list(DEFAULT_LEVEL_LOG_FILE_NAMES.copy().values()))
+        for v_list in logfiles.values():
+            temp = []
+            for v in v_list:
+                filename, data = v.split('-')
+                _, ext = data.split('.')
+                fullname = '.'.join([filename, ext])
+                temp.append(fullname)
+            temp.sort()
+            self.assertEqual(temp, ex_re)
 
 
 if __name__ == '__main__':

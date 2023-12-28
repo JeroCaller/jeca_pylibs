@@ -2,6 +2,7 @@ study/
 __pycache__
 *.log
 .vscode/
-logfiles*/
+logfile*/
 docs/
 *.txt
+*.json
