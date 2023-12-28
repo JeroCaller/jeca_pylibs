@@ -1,6 +1,8 @@
 import unittest
 import sys
 import os
+import shutil
+import json
 
 from dirimporttool import get_super_dir_directly
 
@@ -97,6 +99,120 @@ class TestTxtHandler(unittest.TestCase):
         txtdata = self.txthandler.readContent('readlines')
         self.assertIsInstance(txtdata, list)
         self.assertEqual(len(txtdata), 9)
+
+
+class TestTxtHandlerMakeDirs(unittest.TestCase):
+    """TextFileHandler 클래스 사용 시 주어진 텍스트 파일 경로 중간에 
+    실존하지 않는 디렉토리 존재 시 이를 자동 생성하는 지 테스트.
+    """
+    def setUp(self):
+        self.middirname = 'texts'
+        self.txt_path = rf'..\fixtures\{self.middirname}\mytext.txt'
+        self.txthandler = fdh.TextFileHandler(self.txt_path)
+
+        self.middirname2 = 'nontexts'
+        self.non_txt_path = rf'..\fixtures\{self.middirname2}\mytext.txt'
+        self.non_txthandler = fdh.TextFileHandler(
+            self.non_txt_path, create_dir_ok=False
+        )
+
+    def tearDown(self):
+        shutil.rmtree(os.path.dirname(self.txt_path), True)
+        shutil.rmtree(os.path.dirname(self.non_txt_path), True)
+
+    def testCreateTxtFile(self):
+        # test 1
+        self.txthandler.createTxtFile()
+        self.assertTrue(os.path.exists(self.txt_path))
+        self.assertTrue(os.path.exists(os.path.dirname(self.txt_path)))
+        self.assertTrue(os.path.isfile(self.txt_path))
+
+        # test 2
+        with self.assertRaises(FileNotFoundError):
+            self.non_txthandler.createTxtFile()
+        self.assertFalse(os.path.exists(self.non_txt_path))
+
+    def testIOTextFile(self):
+        # test 1
+        self.txthandler.writeNew(TEXT_SAMPLE)
+        self.assertTrue(os.path.exists(self.txt_path))
+        self.assertTrue(os.path.exists(os.path.dirname(self.txt_path)))
+        self.assertTrue(os.path.isfile(self.txt_path))
+        txtdata = self.txthandler.readContent('read')
+        self.assertEqual(txtdata, TEXT_SAMPLE)
+
+        # test 2
+        with self.assertRaises(FileNotFoundError):
+            self.non_txthandler.writeNew(TEXT_SAMPLE)
+            txtdata = self.non_txthandler.readContent('read')
+
+
+class TestJsonHandler(unittest.TestCase):
+    def setUp(self):
+        self.middirname = 'jsonfiles'
+        self.json_path = rf'..\fixtures\{self.middirname}\myjson.json'
+        self.json_handler = fdh.JsonFileHandler(self.json_path)
+
+        self.middirname2 = 'nonjsonfiles'
+        self.non_json_path = rf'..\fixtures\{self.middirname2}\myjson.json'
+        self.non_json_handler = fdh.JsonFileHandler(
+            self.non_json_path, create_dir_ok=False
+        )
+
+        self.json_data = {
+            "user": "나이썬",
+            "details": {
+                "serialNumber": 5,
+                "age": 25,
+                "main job": "프리랜서 개발자",
+                "second job": "배달",
+                "hobby" : [
+                    "유튜브 보기", "넷플릭스 보기", "헬스"
+                ]
+            }
+        }
+    
+    def tearDown(self):
+        shutil.rmtree(os.path.dirname(self.json_path), True)
+        shutil.rmtree(os.path.dirname(self.non_json_path), True)
+
+    def testCreateJsonFile(self):
+        # test 1
+        self.json_handler.createJsonFile()
+        self.assertTrue(os.path.exists(self.json_path))
+        self.assertTrue(os.path.exists(os.path.dirname(self.json_path)))
+        self.assertTrue(os.path.isfile(self.json_path))
+        
+        # test 2
+        with self.assertRaises(FileNotFoundError):
+            self.non_json_handler.createJsonFile()
+        self.assertFalse(os.path.exists(self.non_json_path))
+
+    def testWrite(self):
+        # test 1
+        self.json_handler.write(self.json_data)
+
+        # json 데이터 가져오기
+        with open(self.json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        self.assertEqual(data, self.json_data)
+
+        # test 2
+        with self.assertRaises(FileNotFoundError):
+            self.non_json_handler.write(self.json_data)
+
+    def testRead(self):
+        # test 1
+        # json 파일 생성 및 데이터 입력
+        with open(self.json_path, 'w', encoding='utf-8') as f:
+            json.dump(self.json_data, f)
+        
+        data = self.json_handler.read()
+        self.assertEqual(data, self.json_data)
+
+        # test 2
+        with self.assertRaises(FileNotFoundError):
+            data = self.non_json_handler.read()
 
 
 if __name__ == '__main__':

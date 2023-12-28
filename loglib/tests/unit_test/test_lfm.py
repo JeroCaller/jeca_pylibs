@@ -5,7 +5,6 @@ import sys
 import os
 import time
 import shutil
-import json
 
 from dirimporttool import get_super_dir_directly
 
@@ -15,7 +14,7 @@ for i in range(1, 2+1):
 
 from logpackage import LogFileManager, EasySetLogFileEnv
 from logpackage import DEFAULT_LEVEL_LOG_FILE_NAMES
-from sub_modules.fdhandler import TextFileHandler
+from sub_modules.fdhandler import TextFileHandler, JsonFileHandler
 from sub_modules.dirsearch import (validate_if_your_dir_with_ext,
 get_all_in_rootdir)
 from tools import DateTools, DateOptions
@@ -41,7 +40,7 @@ def make_entities_with_delay(
         print("테스트를 위한 디렉토리 또는 파일 생성 중... 시간이 다소 걸립니다.")
         print("생성된 디렉토리 및 파일 목록.")
 
-    tfh = TextFileHandler(root_dir)
+    tfh = TextFileHandler(create_dir_ok=False)
     count_entity_made = 0
     
     for t, en in entities:
@@ -149,27 +148,16 @@ def record_deleted_datedir(
     
     """
     tfh = TextFileHandler(del_txt_path)
-
-    # == 주어진 경로에 파일이 없을 때 자동 생성 ==
-    if not os.path.exists(del_txt_path):
-        dirname = os.path.dirname(del_txt_path)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        tfh.createTxtFile()
+    jfh = JsonFileHandler(prev_json_path)
 
     cur_datedirs = os.listdir(target_basedir)
-    
-    if not os.path.exists(prev_json_path):
-        dirname = os.path.dirname(prev_json_path)
-        if dirname:
-            os.makedirs(dirname, exist_ok=True)
-        with open(prev_json_path, 'w', encoding='utf-8') as f:
-            json.dump(cur_datedirs, f, indent=4)
-        return
-    # =========
 
-    with open(prev_json_path, 'r', encoding='utf-8') as f:
-        prev_datedirs: list[str] = json.load(f)
+    # == 주어진 경로에 파일이 없을 때 자동 생성 ==
+    if not os.path.exists(prev_json_path):
+        jfh.write(cur_datedirs)
+        return
+
+    prev_datedirs: list[str] = jfh.read()
 
     cur_only = list(set(cur_datedirs) - set(prev_datedirs))
     prev_only = list(set(prev_datedirs) - set(cur_datedirs))
@@ -179,9 +167,7 @@ def record_deleted_datedir(
         tfh.appendText('\n' + prev_only[0])
         prev_datedirs.remove(prev_only[0])
         prev_datedirs.append(cur_only[0])
-    
-    with open(prev_json_path, 'w', encoding='utf-8') as f:
-        json.dump(prev_datedirs, f, indent=4)
+    jfh.write(prev_datedirs)
 
 
 class TestRotateDirsUnittest(unittest.TestCase):

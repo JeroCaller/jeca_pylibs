@@ -1105,7 +1105,7 @@ class LogFileManager():
             """
             raise FileNotFoundError(err_msg)
         self.base_dir_path = base_dir_path
-        self.txthandler = fdh.TextFileHandler()
+        self.txthandler = fdh.TextFileHandler(create_dir_ok=False)
 
     def setBaseDirPath(self, new_basedir_path: DirPath):
         """로그 파일들을 하나로 모아 저장, 관리하고 있는 
