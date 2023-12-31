@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import shutil
+import re
 
 from dirimporttool import get_super_dir_directly
 
@@ -318,10 +319,9 @@ class TestRotateDirLog(unittest.TestCase):
         for v_list in logfiles.values():
             temp = []
             for v in v_list:
-                filename, data = v.split('-')
-                _, ext = data.split('.')
-                fullname = '.'.join([filename, ext])
-                temp.append(fullname)
+                mat = re.search('_\d+-\d+-\d+', v)
+                filename = v.replace(mat.group(), '')
+                temp.append(filename)
             temp.sort()
             self.assertEqual(temp, ex_re)
 
