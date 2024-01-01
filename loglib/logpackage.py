@@ -429,7 +429,7 @@ class LogFileEnvironment():
         """
         if level_file_names is None:
             self.level_log_file_names \
-                = self.default_level_log_file_names.copy()
+                = DEFAULT_LEVEL_LOG_FILE_NAMES.copy()
             return
 
         self.level_log_file_names.clear()
