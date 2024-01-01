@@ -164,6 +164,8 @@ def record_deleted_datedir(
     prev_only = list(set(prev_datedirs) - set(cur_datedirs))
     if len(prev_datedirs) < limit_datedirs_num:
         prev_datedirs.extend(cur_only)
+    elif cur_only == prev_only == []:
+        return
     else:
         tfh.appendText('\n' + prev_only[0])
         prev_datedirs.remove(prev_only[0])

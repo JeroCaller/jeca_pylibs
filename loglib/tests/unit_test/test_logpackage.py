@@ -297,7 +297,7 @@ class InitLogFileOpt():
             test_classname: unittest.TestCase,
             short_desc: unittest.TestCase.shortDescription
         ):
-        if short_desc == 'error_log_mode':
+        if short_desc == 'error_log_mode' and TEST_ON:
             if not test_classname.main_error_mode_called:
                 main.mainfunc(self.init_log_env, True, False)
                 test_classname.main_error_mode_called = True
@@ -425,8 +425,6 @@ class TestLogFileOptionsDay(unittest.TestCase):
 
         에러 발생 시 에러가 로깅되는지 확인하는 테스트.
         """
-        if not TEST_ON: return
-
         error_filepath = os.path.join(
             self.initsetup.today_dir_path,
             self.today_logfile_names[logging.ERROR]
@@ -556,8 +554,6 @@ class TestLogFileOptWeek(unittest.TestCase):
 
         에러 발생 시 에러가 로깅되는지 확인하는 테스트.
         """
-        if not TEST_ON: return
-
         error_filepath = os.path.join(
             self.initsetup.today_dir_path,
             self.today_logfile_names[logging.ERROR]
@@ -689,8 +685,6 @@ class TestLogFileOptMonth(unittest.TestCase):
 
         에러 발생 시 에러가 로깅되는지 확인하는 테스트.
         """
-        if not TEST_ON: return
-
         error_filepath = os.path.join(
             self.initsetup.today_dir_path,
             self.today_logfile_names[logging.ERROR]
@@ -822,8 +816,6 @@ class TestLogFileOptYear(unittest.TestCase):
 
         에러 발생 시 에러가 로깅되는지 확인하는 테스트.
         """
-        if not TEST_ON: return
-
         error_filepath = os.path.join(
             self.initsetup.today_dir_path,
             self.today_logfile_names[logging.ERROR]
@@ -877,7 +869,7 @@ if __name__ == '__main__':
 
     # 에러 수준 로깅도 가능하게 할 때의 테스트 케이스.
     # 기본값은 에러 수준 로깅 테스트는 넘기도록 되어있음.
-    TEST_ON = True
+    #TEST_ON = True
     #test_only_one_logopt_date(TestLogFileOptionsDay)
     #test_only_one_logopt_date(TestLogFileOptWeek)
     #test_only_one_logopt_date(TestLogFileOptMonth)
