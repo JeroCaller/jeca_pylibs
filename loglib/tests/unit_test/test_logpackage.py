@@ -191,6 +191,18 @@ class TestLogDecor(unittest.TestCase):
         #print(log_data)
         self.assertIn("ERROR", log_data)
 
+    def testDetectErrorAndLogNoError(self):
+        """에러가 발생하지 않았을 떄 에러 미발생 관련 메시지가 로깅되는지
+        테스트.
+        """
+        @DetectErrorAndLog(self.logger)
+        def no_error_func():
+            return 1 + 1
+        
+        no_error_func()
+        log_data = get_log_data()
+        self.assertIn("No error occured.", log_data)
+
 
 class TestLoggerPathTree(unittest.TestCase):
     def setUp(self):

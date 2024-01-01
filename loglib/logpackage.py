@@ -139,7 +139,7 @@ class DetectErrorAndLog():
         ----------
         logger_obj : logging.Logger
             로깅하는 모듈 내에서 정의된 Logger 객체. 
-            해당 로거 객체의 최소 level이 적어도 INFO 이하로 지정되어야 함. 
+            해당 로거 객체의 최소 level이 적어도 ERROR 이하로 지정되어야 함. 
             그래야 해당 로거 객체에 연결된 파일 대상에 로그 기록 가능. 
 
         Raises
@@ -149,6 +149,7 @@ class DetectErrorAndLog():
             ERROR보다 높을 경우 발생.
         """
         self.logger = logger_obj
+        self.no_err_msg = "No error occured."
         if self.logger.level > logging.ERROR:
             raise logexc.LogLowestLevelError(
                 logging.getLevelName(self.logger.level),
@@ -162,6 +163,18 @@ class DetectErrorAndLog():
             except Exception as e:
                 self.logger.exception(e)
                 return None
+            else:
+                # WARNING - 테스트 코드에서 일별을 제외한 날짜별 로깅 시 
+                # WARNING - 에러 미발생 로깅이 여러 번 발생.
+                # WARNING - 그러나 실제 사용 예에선 해당 버그 없는 것으로 파악됨.
+                if self.logger.level == logging.DEBUG:
+                    self.logger.debug(self.no_err_msg)
+                elif self.logger.level == logging.INFO:
+                    self.logger.info(self.no_err_msg)
+                elif self.logger.level == logging.WARNING:
+                    self.logger.warning(self.no_err_msg)
+                else:
+                    self.logger.error(self.no_err_msg)
             return return_value
         return wrapper
 # ================
