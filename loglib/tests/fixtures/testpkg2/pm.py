@@ -1,10 +1,3 @@
-import sys
-
-from dirimporttool import get_super_dir_directly
-
-super_dir = get_super_dir_directly(__file__, 3)
-sys.path.append(super_dir)
-
 from logpackage import PackageLogger, LogFuncEndPoint
 
 collector = PackageLogger()
@@ -18,14 +11,14 @@ class PlusMinus():
         """
         self.num1 = num1
         self.num2 = num2
-        collector.logVariable('num2')
+        collector.logVariable('num1')
 
     @LogFuncEndPoint(program_start_end_logger)
     def getSumResult(self, additional_num: int = 0):
         total = 0
         total += self.num1 + self.num2
         self.num2 += additional_num
-        collector.logVariable('num2')
+        collector.logVariable('num1')
         return total
     
     @LogFuncEndPoint(program_start_end_logger)
@@ -33,5 +26,5 @@ class PlusMinus():
         total = 0
         total = self.num1 - self.num2
         self.num2 += additional_num
-        collector.logVariable('num2')
+        collector.logVariable('num1')
         return total

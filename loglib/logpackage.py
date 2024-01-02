@@ -20,6 +20,7 @@ import sub_modules.dirsearch as dirs
 import sub_modules.fdhandler as fdh
 from sub_modules.tree import PathTree
 from sub_modules.tree import AbsPath
+from loghandlers import CustomRotatingFileHandler
 
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']
@@ -319,6 +320,10 @@ class LogFileEnvironment():
             = self.default_common_formatter
         self.level_formatters: dict[LoggerLevel, logging.Formatter] = {}
 
+        self.handler = DEFAULT
+        self.handler_args = None
+        self.handler_kwargs = None
+
     def setBaseDir(
             self, 
             superpath: DirPath, 
@@ -520,6 +525,89 @@ class LogFileEnvironment():
         """여태까지 설정된 로그 수준별 포맷터들을 삭제한다."""
         self.level_formatters.clear()
 
+    def setCustomHandler(self, classname: callable, *args, **kwargs):
+        """핸들러 설정 메서드. 
+        기본은 logging.FileHandler 핸들러를 사용함. 
+        이 핸들러를 사용하고자 할 경우 이 메서드를 호출할 필요는 없음. 
+        해당 핸들러 외 다른 핸들러를 사용하고자 할 때 이 메서드로 설정하면 됨.
+
+        Parameters
+        ----------
+        classname : callable
+            설정하고자 하는 logging의 핸들러 클래스명을 기입. 
+        *args, **kwargs
+            classname 매개변수로 설정한 핸들러 클래스의 생성자에 들어갈 매개변수들.
+        
+        Examples
+        --------
+        
+        만약 logging.handlers의 RotatingFileHandler 핸들러를 사용하고자 하는 경우.
+
+        일반적인 예)
+
+        >>> from logging.handlers import RotatingFileHandler
+        >>> handler = RotatingFileHandler('some_log.log', maxBytes=10, backupCount=3,
+        ... encoding='utf-8')
+
+        이 메서드에 각 인자들 대입법)
+
+        setCustomHandler(RotatingFileHandler, 'some_log.log', maxBytes=10,
+        backupCount=3, encoding='utf-8')
+
+        """
+        self.handler = classname
+        self.handler_args = args
+        self.handler_kwargs = kwargs
+
+    def setCustomRotatingFileHandler(self, *args, **kwargs):
+        """로그 환경 설정에 쓰일 파일 핸들러를 
+        CustomRotatingFileHandler 핸들러 클래스로 설정한다. 
+        해당 핸들러 클래스에 대한 것은 loghandlers.py 파일 참조.
+
+        해당 핸들러 클래스로 설정하고자 한다면 setCustomHandler() 메서드를 
+        직접 이용하는 대신 이 메서드를 호출하면 된다.
+
+        Parameters
+        ----------
+        *args, **kwargs
+            CustomRotatingFileHandler 클래스의 생성자에 들어갈 매개변수들
+        
+        """
+        self.setCustomHandler(CustomRotatingFileHandler, *args, **kwargs)
+
+    def setDefaultFileHandler(self):
+        """LogFileEnvironment() 클래스에서 사용할 로그 파일 핸들러를 기본 
+        핸들러로 지정한다. 
+
+        logging.FileHandler()를 기본 핸들러로 지정한다.
+
+        """
+        self.handler = DEFAULT
+        self.handler_args = None
+        self.handler_kwargs = None
+
+    def _getCustomHandler(self, *args, **kwargs):
+        """setCustomHandler() 메서드로 지정한 핸들러 클래스를 인스턴스화하여 이를 
+        반환.
+
+        Parameters
+        ----------
+        *args, **kwargs
+            설정한 핸들러 클래스 생성자에 추가로 입력할 매개변수가 있으면 입력.
+        
+        """
+        if not callable(self.handler):
+            return None
+        
+        if args:
+            self.handler_args = tuple(
+                list(self.handler_args).extend(list(args))
+            )
+        if kwargs:
+            for k, v in kwargs.items():
+                self.handler_kwargs[k] = v
+        return self.handler(*self.handler_args, **self.handler_kwargs)
+
     def setDate(self, option: tools.DateOptions):
         """로그 파일들을 기간별로 구분할 것인지를 결정하는 메서드.
         
@@ -667,10 +755,13 @@ class LogFileEnvironment():
                     log_file_name = '.'.join([log_file_name, 'log'])
                 target_file = os.path.join(date_dir, log_file_name)
                 
-                file_handler = logging.FileHandler(
-                    filename=target_file,
-                    encoding='utf-8'
-                )
+                if self.handler == DEFAULT:
+                    file_handler = logging.FileHandler(
+                        filename=target_file,
+                        encoding='utf-8'
+                    )
+                else:
+                    file_handler = self._getCustomHandler(filename=target_file)
                 return file_handler
 
             for level in DEFAULT_TOPLEVEL_LOGGERS:
@@ -694,10 +785,13 @@ class LogFileEnvironment():
             log_file_name = '.'.join([log_file_name, 'log'])
             target_file = os.path.join(date_dir, log_file_name)
 
-            file_handler = logging.FileHandler(
-                filename=target_file,
-                encoding='utf-8'
-            )
+            if self.handler == DEFAULT:
+                file_handler = logging.FileHandler(
+                    filename=target_file,
+                    encoding='utf-8'
+                )
+            else:
+                file_handler = self._getCustomHandler(filename=target_file)
             file_handler.setLevel(logging.DEBUG)
             if not self.common_formatter:
                 file_handler.setFormatter(self.default_common_formatter)
@@ -731,6 +825,9 @@ class EasySetLogFileEnv(LogFileEnvironment):
         사용할 수 있는 메서드. 
 
         각각의 설정에 대한 자세한 사항은 LogFileEnvironment 클래스를 참조.
+
+        이 메서드를 통해 기본 설정하기 전 추가적인 설정을 원한다면 
+        이 메서드를 호출하기 전에 먼저 추가적인 설정을 해주는 메서드를 사용하기를 권장. 
 
         Parameters
         ----------

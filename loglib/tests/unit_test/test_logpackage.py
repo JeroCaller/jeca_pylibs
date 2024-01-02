@@ -23,6 +23,8 @@ from tests.fixtures.testpkg import main
 
 # 전역 상수 정의 모음.
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
+
+# 특정 테스트케이스를 실행하고자 한다면 여기서 True로 바꾼다.
 TEST_ON: bool = False
 
 def get_log_data(filename: str = LOGFILE) -> (str | None):
@@ -432,6 +434,7 @@ class TestLogFileOptionsDay(unittest.TestCase):
         self.assertIn(levelname, log_data[0])
         self.assertIn('root', log_data[1])
 
+    @unittest.skipUnless(TEST_ON, '')
     def testErrorLogFile(self):
         """error_log_mode
 
@@ -561,6 +564,7 @@ class TestLogFileOptWeek(unittest.TestCase):
         self.assertIn(levelname, log_data)
         self.assertIn('root', log_data)
 
+    @unittest.skipUnless(TEST_ON, '')
     def testErrorLogFile(self):
         """error_log_mode
 
@@ -692,6 +696,7 @@ class TestLogFileOptMonth(unittest.TestCase):
         self.assertIn(levelname, log_data)
         self.assertIn('root', log_data)
 
+    @unittest.skipUnless(TEST_ON, '')
     def testErrorLogFile(self):
         """error_log_mode
 
@@ -823,6 +828,7 @@ class TestLogFileOptYear(unittest.TestCase):
         self.assertIn(levelname, log_data)
         self.assertIn('root', log_data)
 
+    @unittest.skipUnless(TEST_ON, '')
     def testErrorLogFile(self):
         """error_log_mode
 
@@ -879,9 +885,8 @@ if __name__ == '__main__':
     #test_only_one_logopt_date(TestLogFileOptMonth)
     #test_only_one_logopt_date(TestLogFileOptYear)
 
-    # 에러 수준 로깅도 가능하게 할 때의 테스트 케이스.
-    # 기본값은 에러 수준 로깅 테스트는 넘기도록 되어있음.
-    #TEST_ON = True
+    # 각 케이스에 대해 따로 테스트하고자 할 때, unittest.main() 줄은 주석처리한 후,
+    # 원하는 줄만 주석해제 하여 실행하면 된다.
     #test_only_one_logopt_date(TestLogFileOptionsDay)
     #test_only_one_logopt_date(TestLogFileOptWeek)
     #test_only_one_logopt_date(TestLogFileOptMonth)
