@@ -26,14 +26,14 @@ its golden rays paint the sky in hues of orange and pink.
 
 class TestTxtHandler(unittest.TestCase):
     def setUp(self):
-        self.fixture_txtpath = r'..\fixtures\testtext.txt'
-        self.txthandler = fdh.TextFileHandler(self.fixture_txtpath)
+        self.testdata_txtpath = r'..\testdata\testtext.txt'
+        self.txthandler = fdh.TextFileHandler(self.testdata_txtpath)
         self.onoff_teardown: bool = True
 
     def tearDown(self):
         if self.onoff_teardown:
             try:
-                os.remove(self.fixture_txtpath)
+                os.remove(self.testdata_txtpath)
             except FileNotFoundError:
                 pass
 
@@ -41,14 +41,14 @@ class TestTxtHandler(unittest.TestCase):
         """지정된 경로에 텍스트 파일이 생성되었는지 확인하는 테스트."""
         self.onoff_teardown = True
         self.txthandler.createTxtFile()
-        self.assertTrue(os.path.exists(self.fixture_txtpath))
-        self.assertTrue(os.path.isfile(self.fixture_txtpath))
+        self.assertTrue(os.path.exists(self.testdata_txtpath))
+        self.assertTrue(os.path.isfile(self.testdata_txtpath))
 
     def testWriteNew(self):
         """지정된 경로에 생성한 텍스트 파일에 텍스트가 삽입되었는지 테스트."""
         self.onoff_teardown = True
         self.txthandler.writeNew(TEXT_SAMPLE)
-        with open(self.fixture_txtpath, 'r', encoding='utf-8') as f:
+        with open(self.testdata_txtpath, 'r', encoding='utf-8') as f:
             txtdata = f.read()
         self.assertTrue(txtdata)
         self.assertEqual(txtdata, TEXT_SAMPLE)
@@ -61,7 +61,7 @@ class TestTxtHandler(unittest.TestCase):
         sample_txt = "hello, world!"
         self.txthandler.writeNew(sample_txt)
         self.txthandler.writeNew(TEXT_SAMPLE)
-        with open(self.fixture_txtpath, 'r', encoding='utf-8') as f:
+        with open(self.testdata_txtpath, 'r', encoding='utf-8') as f:
             txtdata = f.read()
         self.assertNotIn(sample_txt, txtdata)
         self.assertEqual(txtdata, TEXT_SAMPLE)
@@ -72,7 +72,7 @@ class TestTxtHandler(unittest.TestCase):
         self.txthandler.writeNew(TEXT_SAMPLE)
         additional_text = "테스트 글!"
         self.txthandler.appendText(additional_text)
-        with open(self.fixture_txtpath, 'r', encoding='utf-8') as f:
+        with open(self.testdata_txtpath, 'r', encoding='utf-8') as f:
             txtdata = f.readlines()
         self.assertTrue(txtdata)
         self.assertEqual(txtdata[-1], additional_text)
@@ -107,11 +107,11 @@ class TestTxtHandlerMakeDirs(unittest.TestCase):
     """
     def setUp(self):
         self.middirname = 'texts'
-        self.txt_path = rf'..\fixtures\{self.middirname}\mytext.txt'
+        self.txt_path = rf'..\testdata\{self.middirname}\mytext.txt'
         self.txthandler = fdh.TextFileHandler(self.txt_path)
 
         self.middirname2 = 'nontexts'
-        self.non_txt_path = rf'..\fixtures\{self.middirname2}\mytext.txt'
+        self.non_txt_path = rf'..\testdata\{self.middirname2}\mytext.txt'
         self.non_txthandler = fdh.TextFileHandler(
             self.non_txt_path, create_dir_ok=False
         )
@@ -150,11 +150,11 @@ class TestTxtHandlerMakeDirs(unittest.TestCase):
 class TestJsonHandler(unittest.TestCase):
     def setUp(self):
         self.middirname = 'jsonfiles'
-        self.json_path = rf'..\fixtures\{self.middirname}\myjson.json'
+        self.json_path = rf'..\testdata\{self.middirname}\myjson.json'
         self.json_handler = fdh.JsonFileHandler(self.json_path)
 
         self.middirname2 = 'nonjsonfiles'
-        self.non_json_path = rf'..\fixtures\{self.middirname2}\myjson.json'
+        self.non_json_path = rf'..\testdata\{self.middirname2}\myjson.json'
         self.non_json_handler = fdh.JsonFileHandler(
             self.non_json_path, create_dir_ok=False
         )

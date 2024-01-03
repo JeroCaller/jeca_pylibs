@@ -4,10 +4,11 @@ changelog
 > 2024-01-03
 > - loglib
 >   - 같은 날짜 디렉토리 내 로그 파일들에 대해 기준 용량을 넘어가면 기존 로그 내역은 새로운 파일에 이동시키고 기존 파일을 비운 후, 다시 새로운 로그 기록을 저장하는 rotating 기능 추가. -> logging.handlers.RotatingFileHandler() 클래스를 응용함.
->   - 해당 기능에 대한 fixture 패키지 및 테스트 코드 추가. -> 테스트 성공.
+>   - 해당 기능에 대한 testdata 패키지 및 테스트 코드 추가. -> 테스트 성공.
 >   - test_logpackage.py
 >       - 코드 수정.
 >       - 제대로 된 테스트 환경이 아님을 확인함. 추후 문제 해결 필요.
+>   - 용어 변경.
 
 > 2024-01-01
 > - loglib
@@ -20,7 +21,7 @@ changelog
 >   - TextFileHandler 클래스에서 주어진 텍스트 경로의 중간 디렉토리가 없을 시 이를 자동으로 생성해주는 기능 추가. 관련 테스트 코드 추가 및 테스트 성공.
 >   - json 파일 입출력 클래스 JsonFileHandler 클래스 추가. 관련 테스트 코드 추가 및 테스트 성공.
 > - loglib
->   - 테스트 코드 추가 및 신규 테스트 코드를 위한 기존 fixture 코드 변경.
+>   - 테스트 코드 추가 및 신규 테스트 코드를 위한 기존 testdata 코드 변경.
 >   - 리팩토링
 
 > 2023-12-27
@@ -82,9 +83,9 @@ DateTools.convertStrToDate() 메서드 및 관련 테스트 코드 추가. 테�
 > 2023-12-13
 > - loglib
 > - 코드 리팩토링
->   - 기존 PackageLogger 클래스 삭제 및 관련 테스트 fixture 삭제.
+>   - 기존 PackageLogger 클래스 삭제 및 관련 테스트 testdata 삭제.
 >   - 기존 CustomizablePackageLogger 클래스 이름을 PackageLogger 이름으로 변경.
->   - 기존 fixture 패키지들의 이름 변경
+>   - 기존 testdata 패키지들의 이름 변경
 >   - 기존 클래스 삭제 및 클래스명 변경으로 인한 모듈 import 관련 코드 리팩토링.
 
 > 2023-12-12
@@ -105,17 +106,17 @@ DateTools.convertStrToDate() 메서드 및 관련 테스트 코드 추가. 테�
 >   - dirsearch.py 생성 및 여러 기능 추가.
 >       - 루트 디렉토리 경로가 주어지면 해당 디렉토리 내 모든 파일 및 디렉토리들의 경로를 반환하거나 그 구조를 시각화하는 기능.
 >       - 여러 파일 및 디렉토리들의 경로 문자열들의 리스트를 문자열 길이 순으로 정렬하는 기능.
->   - dirsearch.py 내 기능들에 대한 단위 테스트를 위한 fixture 추가 및 단위 테스트 코드 추가. 테스트 수행 완료. (테스트 성공)
+>   - dirsearch.py 내 기능들에 대한 단위 테스트를 위한 testdata 추가 및 단위 테스트 코드 추가. 테스트 수행 완료. (테스트 성공)
 
 > 2023-12-05
 > - loglib
->   - 패키지 fixture에 테스트를 위한 코드 추가.
->   - 패키지 fixture에 코드 추가로 발견한 에러 고침.
+>   - 패키지 testdata에 테스트를 위한 코드 추가.
+>   - 패키지 testdata에 코드 추가로 발견한 에러 고침.
 
 > 2023-12-04
 > - loglib
 >   - 단위 테스트 내 테스트 추가(일, 주, 월, 연별 및 로그 수준별 로깅 테스트)
->   - 단위 테스트를 위한 fixture에 코드 추가.
+>   - 단위 테스트를 위한 testdata에 코드 추가.
 >   - 추가한 단위 테스트 모두 테스트 통과.
 >   - logpackage.py의 LogFileEnvironment 클래스의 common formatter 형식 수정.
 
@@ -130,7 +131,7 @@ DateTools.convertStrToDate() 메서드 및 관련 테스트 코드 추가. 테�
 > - loglib
 >   - 독스트링 수정.
 >   - 예외, 버그 수정을 위한 코드 수정.
->   - 단위 테스트를 위한 패키지 fixture 'testpkg3' 생성 및 단위 테스트 모듈 
+>   - 단위 테스트를 위한 패키지 testdata 'testpkg3' 생성 및 단위 테스트 모듈 
 'test_logpackage.py'와 연결하여 테스트 하기 위한 환경 설정 완료. (testpkg1, 2는 
 해당 패키지 안의 main.py를 직접 실행시켜서 로그 파일이 생성되고 로깅이 되는지를 
 확인하기 위한 용도였음. 추후 단위 테스트 모듈에 'testpkg3'에 대한 여러 테스트 코드 
@@ -143,7 +144,7 @@ DateTools.convertStrToDate() 메서드 및 관련 테스트 코드 추가. 테�
 >       - logpackage.py 모듈의 LogFileEnvironment 클래스에서, 로그 수준별 로그 파일 분류 옵션과 로그 수준별 최상위 로거 객체 이름 설정 기능을 분리하여 사용자가 로그 파일을 수준별 분류로 하지 않아도 로그 수준별 최상위 로거 객체 생성에 영향이 가지 않도록 수정함. 
 >       - logexc.py 모듈 내 예외 클래스 이름을 짧게 줄임.
 >       - tools.py의 DateTools.getDateStr() 키워드 인자 및 독스트링 수정.
->   - CustomizablePackageLogger, EasySetLogFileEnv, LogFileEnvironment 클래스 테스트를 위한 패키지 fixture 생성 및 테스트를 위한 코드 설정(loglib\tests\fixtures\testpkg2). -> 해당 패키지 fixture 자체 실행 결과 에러, 버그는 아직 발견하지 못함. -> 추후 여러 상황에 대한 테스트 코드 구현 예정.
+>   - CustomizablePackageLogger, EasySetLogFileEnv, LogFileEnvironment 클래스 테스트를 위한 패키지 testdata 생성 및 테스트를 위한 코드 설정(loglib\tests\testdata\testpkg2). -> 해당 패키지 testdata 자체 실행 결과 에러, 버그는 아직 발견하지 못함. -> 추후 여러 상황에 대한 테스트 코드 구현 예정.
 
 > 2023-11-27
 > - loglib
@@ -197,7 +198,7 @@ DateTools.convertStrToDate() 메서드 및 관련 테스트 코드 추가. 테�
 >       - 특정 함수 또는 메서드 내에서 특정 변수만을 추적하여 디버그 로깅하고자 할 때 일일이 해당 함수 또는 메서드 이름 및 클래스, 모듈 이름까지 
 logging.getLogger() 함수 인자에 대입하지 않아도 자동으로 해당 모듈, 클래스, 메서드 (함수라면 함수) 이름을 읽어들여 이를 토대로 로거 객체명을 자동 결정 및 자동 생성. 
 >       - 변수 디버그 로그, 에러 로그 등을 기록하는 로그 파일들을 하나의 폴더에 자동으로 저장. -> 로그 파일 폴더 위치는 현재 실행시키는 파이썬 파일이 든 디렉토리 안에 생성됨. 
-> - loglib에 대한 기초적인 사용 예시는 loglib/tests/fixtures/testpkg1 폴더 내 모듈들 참고. 
+> - loglib에 대한 기초적인 사용 예시는 loglib/tests/testdata/testpkg1 폴더 내 모듈들 참고. 
 > - loglib에서 LoggerWHT 클래스 삭제 -> 잘못된 코드라서 삭제. 
 > - loglib에서 logexp.py 이름을 logexc.py 이름으로 변경. 
 

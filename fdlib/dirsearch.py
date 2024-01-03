@@ -326,7 +326,7 @@ def validate_if_your_dir_with_ext(
 if __name__ == '__main__':
     # 테스트 용 코드.
     root_dir_path \
-        = r'C:\my_coding_works\python\my_python_libs\fdlib\tests\fixtures\testpkg'
+        = r'C:\my_coding_works\python\my_python_libs\fdlib\tests\testdata\testpkg'
     result = get_all_in_rootdir(root_dir_path, False)
     from pprint import pprint
     pprint(result)

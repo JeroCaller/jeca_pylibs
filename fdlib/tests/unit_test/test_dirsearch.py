@@ -13,7 +13,7 @@ from submodules.tree import PathTree, LENGTH
 
 class TestLengthSort(unittest.TestCase):
     def setUp(self):
-        self.fixture_text = [
+        self.testdata_text = [
             r'C:\test_folder\backup\잃어버린 나비의 꿈.txt',
             r'C:\test_folder\myzip.zip',
             r'C:\test_folder\backup\some_text.txt',
@@ -22,7 +22,7 @@ class TestLengthSort(unittest.TestCase):
         ]
 
     def testSort(self):
-        actual_result = dirs.sort_length_order(self.fixture_text)
+        actual_result = dirs.sort_length_order(self.testdata_text)
         expected_result = [
             r'C:\test_folder\myzip.zip',
             r'C:\test_folder\some_text.txt',
@@ -34,7 +34,7 @@ class TestLengthSort(unittest.TestCase):
             self.assertEqual(data, expected_result[i])
 
         actual_result2 = dirs.sort_length_order(
-            self.fixture_text, False)
+            self.testdata_text, False)
         expected_result2 = [ 
             r'C:\test_folder\subfolder\새 텍스트 20230423002632.txt',
             r'C:\test_folder\backup\잃어버린 나비의 꿈.txt',
@@ -48,8 +48,8 @@ class TestLengthSort(unittest.TestCase):
 
 class TestDirSearch(unittest.TestCase):
     def setUp(self):
-        self.test_root_dir_path = "..\\fixtures\\testpkg"
-        self.fixture_path = [
+        self.test_root_dir_path = "..\\testdata\\testpkg"
+        self.testdata_path = [
             r'testpkg\file6.txt',
             r'testpkg\sub_dir1\file1.txt',
             r'testpkg\sub_dir1\file2.txt',
@@ -58,14 +58,14 @@ class TestDirSearch(unittest.TestCase):
             r'testpkg\sub_dir2\sub_sub_dir2\file5.txt',
             r'testpkg\sub_dir2\sub_sub_dir3',
         ]
-        self.fixture_path = dirs.sort_length_order(self.fixture_path)
+        self.testdata_path = dirs.sort_length_order(self.testdata_path)
 
     def testRootDirSearch(self):
         """dirsearch.get_all_leaf_entity_path() 함수 테스트."""
         results = dirs.get_all_in_rootdir(self.test_root_dir_path, False)
         results = dirs.sort_length_order(results)
         for i, path in enumerate(results):
-            self.assertEqual(path, self.fixture_path[i])
+            self.assertEqual(path, self.testdata_path[i])
 
     def testPathTreeFromSearch(self):
         """get_pathtree_obj_from_root_dir() 함수 테스트."""
@@ -74,17 +74,17 @@ class TestDirSearch(unittest.TestCase):
         self.assertIsInstance(result, PathTree)
         leafpath = result.getAllLeafAbs(how_to_sort=LENGTH)
         for i, path in enumerate(leafpath):
-            self.assertEqual(path, self.fixture_path[i])
+            self.assertEqual(path, self.testdata_path[i])
 
 
 class TestValidateIfDir(unittest.TestCase):
     """validate_if_your_dir_with_ext() 함수 테스트."""
     def setUp(self):
         self.fixt_dirs_path = [
-            r'..\fixtures\validatedirs\dir1',
-            r'..\fixtures\validatedirs\dir2',
-            r'..\fixtures\validatedirs\dir3',
-            r'..\fixtures\validatedirs\2023-12-24',
+            r'..\testdata\validatedirs\dir1',
+            r'..\testdata\validatedirs\dir2',
+            r'..\testdata\validatedirs\dir3',
+            r'..\testdata\validatedirs\2023-12-24',
         ]
 
     def testValidateIfDir(self):

@@ -365,10 +365,10 @@ class TestSearchDateDir(unittest.TestCase):
         self.datetool = DateTools()
         self.d_opt = DateOptions()
 
-        self.day_root_dir = '..\\fixtures\\datedirs\\days'
-        self.week_root_dir = '..\\fixtures\\datedirs\\weeks'
-        self.month_root_dir = '..\\fixtures\\datedirs\\months'
-        self.year_root_dir = '..\\fixtures\\datedirs\\years'
+        self.day_root_dir = '..\\testdata\\datedirs\\days'
+        self.week_root_dir = '..\\testdata\\datedirs\\weeks'
+        self.month_root_dir = '..\\testdata\\datedirs\\months'
+        self.year_root_dir = '..\\testdata\\datedirs\\years'
 
         self.day_dates = [
             '010-5-10', '010-1234-5678', '2023-11-31', 
@@ -551,7 +551,7 @@ class TestSearchDateDirBirth(unittest.TestCase):
         self.dopt = DateOptions()
 
         # 실제 생성 시각이 하루 이상 차이나는 디렉토리 대상 테스트를 위한 설정.
-        self.logfile_basedir = r'..\fixtures\testpkg\logfiles_day'
+        self.logfile_basedir = r'..\testdata\testpkg\logfiles_day'
 
         if not TestSearchDateDirBirth.access_tried:
             # self.logfile_basedir로 지정된 경로가 실제로 존재하고 그 안에 
@@ -562,8 +562,8 @@ class TestSearchDateDirBirth(unittest.TestCase):
         # ========
 
         # 테스트를 위해 임의로 날짜 디렉토리들을 형성하기 위한 초기 설정.
-        self.datedirs_rootdir = r'..\fixtures\datedirbirth'
-        self.fixtures = [
+        self.datedirs_rootdir = r'..\testdata\datedirbirth'
+        self.testdatas = [
             (0, '2023-12-24'),
             (1, '2023-12-25'),
             (3, '2023-12-32'),
@@ -577,7 +577,7 @@ class TestSearchDateDirBirth(unittest.TestCase):
         ]
         if not TestSearchDateDirBirth.made_testdirs:
             make_datedirs_with_delay(
-                self.datedirs_rootdir, self.fixtures, False
+                self.datedirs_rootdir, self.testdatas, False
             )
             TestSearchDateDirBirth.made_testdirs = True
 

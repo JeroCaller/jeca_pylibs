@@ -19,7 +19,7 @@ DEFAULT_LEVEL_LOG_FILE_NAMES
 )
 from logexc import LogLowestLevelError
 from tools import DateOptions, DateTools
-from tests.fixtures.testpkg import main
+from tests.testdata.testpkg import main
 
 # 전역 상수 정의 모음.
 LOGFILE = "\\".join([get_current_absdir(__file__), 'test_log.log'])
@@ -41,15 +41,15 @@ def get_log_data(filename: str = LOGFILE) -> (str | None):
         return None
     return data
 
-def get_fixture_logger(
+def get_testdata_logger(
         logger_name: str | None = None,
         level: int = logging.DEBUG
     ) -> (logging.Logger):
     """테스트용 로거 객체 생성 및 설정 함수."""
     if logger_name is None:
         logger_name = 'test_log'
-    fixture_logger = logging.getLogger(logger_name)
-    fixture_logger.setLevel(level)
+    testdata_logger = logging.getLogger(logger_name)
+    testdata_logger.setLevel(level)
     formatter = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s:\n%(message)s"
     )
@@ -60,8 +60,8 @@ def get_fixture_logger(
     )
     file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(formatter)
-    fixture_logger.addHandler(file_handler)
-    return fixture_logger
+    testdata_logger.addHandler(file_handler)
+    return testdata_logger
 
 def get_today_logfile_names() -> (dict[LoggerLevel, str]):
     """로그 수준별 오늘 날짜 문자열이 뒤에 붙은 로그 파일명 반환.
@@ -84,7 +84,7 @@ def get_today_logfile_names() -> (dict[LoggerLevel, str]):
 
 class TestLogDecor(unittest.TestCase):
     def setUp(self):
-        self.logger = get_fixture_logger('test_log', logging.DEBUG)
+        self.logger = get_testdata_logger('test_log', logging.DEBUG)
 
     def tearDown(self):
         self.logger.setLevel(logging.DEBUG)
@@ -243,7 +243,7 @@ class TestLoggerHierarchy(unittest.TestCase):
     def setUp(self):
         self.lh = _LoggerHierarchy()
 
-    @unittest.skip("""외부 fixture 패키지 임포트하여 테스트 시도 시 
+    @unittest.skip("""외부 testdata 패키지 임포트하여 테스트 시도 시 
     이 메서드를 스킵해야 예외 상황 발생하지 않음.
     """)
     def testLoggerHierarchy(self):
@@ -272,7 +272,7 @@ class InitLogFileOpt():
             self, 
             dateopt: DateOptions
         ):
-        self.base_dir_location = '..\\fixtures\\testpkg'
+        self.base_dir_location = '..\\testdata\\testpkg'
         if dateopt == DateOptions.DAY:
             self.base_dir_name_date = 'logfiles_day'
         elif dateopt == DateOptions.WEEK:
@@ -335,7 +335,7 @@ class InitLogFileOpt():
 
 
 class TestLogFileOptionsDay(unittest.TestCase):
-    """loglib\\tests\\fixtures\\testpkg의 mainfunc 함수 테스트.
+    """loglib\\tests\\testdata\\testpkg의 mainfunc 함수 테스트.
     day 모드만 테스트함.
     
     해당 테스트 클래스에서 테스트하고자 하는 것들.
@@ -468,7 +468,7 @@ class TestLogFileOptionsDay(unittest.TestCase):
 
 
 class TestLogFileOptWeek(unittest.TestCase):
-    """loglib\\tests\\fixtures\\testpkg의 mainfunc 함수 테스트.
+    """loglib\\tests\\testdata\\testpkg의 mainfunc 함수 테스트.
     week 모드만 테스트함.
 
     해당 테스트 클래스에서 테스트하고자 하는 것들.
@@ -598,7 +598,7 @@ class TestLogFileOptWeek(unittest.TestCase):
 
 
 class TestLogFileOptMonth(unittest.TestCase):
-    """loglib\\tests\\fixtures\\testpkg의 mainfunc 함수 테스트.
+    """loglib\\tests\\testdata\\testpkg의 mainfunc 함수 테스트.
     month 모드만 테스트함.
 
     해당 테스트 클래스에서 테스트하고자 하는 것들.
@@ -730,7 +730,7 @@ class TestLogFileOptMonth(unittest.TestCase):
 
 
 class TestLogFileOptYear(unittest.TestCase):
-    """loglib\\tests\\fixtures\\testpkg의 mainfunc 함수 테스트.
+    """loglib\\tests\\testdata\\testpkg의 mainfunc 함수 테스트.
     year 모드만 테스트함.
 
     해당 테스트 클래스에서 테스트하고자 하는 것들.

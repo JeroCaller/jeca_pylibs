@@ -1,6 +1,6 @@
 """로그 파일 용량에 따른 자동 rotation 기능 테스트.
 
-fixtures\\testpkg2 를 이용함.
+testdata\\testpkg2 를 이용함.
 
 """
 
@@ -19,7 +19,7 @@ for i in range(1, 2+1):
 from logpackage import EasySetLogFileEnv
 from logpackage import LOGGERTREE
 from tools import DateOptions, DateTools
-from tests.fixtures.testpkg2.main import mainfunc
+from tests.testdata.testpkg2.main import mainfunc
 from sub_modules.dirsearch import get_all_in_rootdir
 
 # 전역 상수 정의
@@ -93,7 +93,7 @@ class InitLogFileOpt():
             dateopt: DateOptions,
             **handler_kwargs
         ):
-        self.base_dir_location = '..\\fixtures\\testpkg2'
+        self.base_dir_location = '..\\testdata\\testpkg2'
         if dateopt == DateOptions.DAY:
             self.base_dir_name_date = 'logfiles_day'
         elif dateopt == DateOptions.WEEK:

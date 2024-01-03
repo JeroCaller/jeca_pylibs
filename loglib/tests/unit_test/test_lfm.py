@@ -19,7 +19,7 @@ from sub_modules.fdhandler import TextFileHandler, JsonFileHandler
 from sub_modules.dirsearch import (validate_if_your_dir_with_ext,
 get_all_in_rootdir)
 from tools import DateTools, DateOptions
-from tests.fixtures.testpkg.main import mainfunc
+from tests.testdata.testpkg.main import mainfunc
 
 def make_entities_with_delay(
         root_dir: str, 
@@ -180,13 +180,13 @@ class TestRotateDirsUnittest(unittest.TestCase):
     def setUp(self):
         self.maxDiff = None
 
-        self.rootdir = os.path.abspath(r'..\fixtures\rotatedirs')
+        self.rootdir = os.path.abspath(r'..\testdata\rotatedirs')
         try:
             os.mkdir(self.rootdir)
         except FileExistsError:
             pass
 
-        self.fixtures = [
+        self.testdatas = [
             (0, r'2023-12-24\info.log'),
             (1, r'2023-12-25\error.log'),
             (3, r'2023-12-32\debug.log'),
@@ -200,7 +200,7 @@ class TestRotateDirsUnittest(unittest.TestCase):
             (0, r'2023-12-24\hi.txt')
         ]
         if not TestRotateDirsUnittest.made_test_ent:
-            make_entities_with_delay(self.rootdir, self.fixtures)
+            make_entities_with_delay(self.rootdir, self.testdatas)
             TestRotateDirsUnittest.made_test_ent = True
 
         self.lfm = LogFileManager(self.rootdir)
@@ -238,7 +238,7 @@ class TestRotateDirsUnittest(unittest.TestCase):
 
 class InitLogConfig():
     def __init__(self, dateopt: DateOptions):
-        self.base_dir_location = r'..\fixtures\testpkg'
+        self.base_dir_location = r'..\testdata\testpkg'
         if dateopt == DateOptions.DAY:
             self.base_dir_name_date = 'logfile_rot_day'
         elif dateopt == DateOptions.WEEK:
@@ -278,7 +278,7 @@ class InitLogConfig():
 
 class TestRotateDirLog(unittest.TestCase):
     """rotateDateDirs() 메서드 테스트. 
-    테스트 fixture 패키지 내 실제 로깅 과정에서 사용하여 
+    테스트 testdata 패키지 내 실제 로깅 과정에서 사용하여 
     실제 해당 메서드가 잘 작동하는지 테스트. 
 
     제대로 된 테스트를 위해 실제 로깅 날짜에 따라 날짜 디렉토리를 생성, 보관하므로, 
@@ -288,8 +288,8 @@ class TestRotateDirLog(unittest.TestCase):
     main_init: bool = False
 
     def setUp(self):
-        self.json_path_day = r'..\fixtures\datedirrecord\day.json'
-        self.del_rec_txt_path_day = r'..\fixtures\datedirrecord\day.txt'
+        self.json_path_day = r'..\testdata\datedirrecord\day.json'
+        self.del_rec_txt_path_day = r'..\testdata\datedirrecord\day.txt'
         self.dopt = DateOptions()
 
         self.initconfigday = InitLogConfig(self.dopt.DAY)
