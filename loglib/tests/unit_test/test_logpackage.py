@@ -12,7 +12,7 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 from logpackage import (LogFuncEndPoint, DetectErrorAndLog,
-_LoggerPathTree, _LoggerHierarchy, EasySetLogFileEnv)
+_LoggerPathTree, _LoggerHierarchy, EasySetLogFileEnv, LogFileManager)
 # 모듈 수준 정의 상수 import
 from logpackage import (LOGGERTREE, LoggerLevel, 
 DEFAULT_LEVEL_LOG_FILE_NAMES
@@ -308,30 +308,21 @@ class InitLogFileOpt():
 
     def setupForPrevMultiLogs(
             self,
-            test_classname: unittest.TestCase,
             short_desc: unittest.TestCase.shortDescription
         ):
         if short_desc == 'error_log_mode' and TEST_ON:
-            if not test_classname.main_error_mode_called:
-                main.mainfunc(self.init_log_env, True, False)
-                test_classname.main_error_mode_called = True
+            main.mainfunc(self.init_log_env, True, False)
         elif short_desc == 'all_in_one_mode':
-            if not test_classname.all_in_one_mode_called:
-                main.mainfunc(
-                    self.init_log_env_all_in_one, 
-                    print_result=False
-                )
-                test_classname.all_in_one_mode_called = True
+            main.mainfunc(
+                self.init_log_env_all_in_one, 
+                print_result=False
+            )
         elif short_desc == 'all_in_one_and_error_log_mode':
-            if not test_classname.all_in_one_and_error_mode_called:
-                main.mainfunc(
-                    self.init_log_env_all_in_one, True, False
-                )
-                test_classname.all_in_one_and_error_mode_called = True
+            main.mainfunc(
+                self.init_log_env_all_in_one, True, False
+            )
         else:
-            if not test_classname.main_called:
-                main.mainfunc(self.init_log_env, print_result=False)
-                test_classname.main_called = True
+            main.mainfunc(self.init_log_env, print_result=False)
 
 
 class TestLogFileOptionsDay(unittest.TestCase):
@@ -343,22 +334,21 @@ class TestLogFileOptionsDay(unittest.TestCase):
     2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     
     """
-    main_called: bool = False
-    main_error_mode_called: bool = False
-    all_in_one_and_error_mode_called: bool = False
-    all_in_one_mode_called: bool = False
 
     def setUp(self):
         self.initsetup = InitLogFileOpt(DateOptions.DAY)
 
         # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
         self.desc = self.shortDescription()
-        self.initsetup.setupForPrevMultiLogs(
-            TestLogFileOptionsDay,
-            self.desc
-        )
+        self.initsetup.setupForPrevMultiLogs(self.desc)
 
         self.today_logfile_names = get_today_logfile_names()
+    
+    def tearDown(self):
+        self.logmanager = LogFileManager(self.initsetup.base_dir_path)
+        self.logmanager.eraseAllInDateDir(
+            os.path.basename(self.initsetup.today_dir_path)
+        )
 
     def testDayBaseDirExists(self):
         """일별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
@@ -413,12 +403,12 @@ class TestLogFileOptionsDay(unittest.TestCase):
             self.today_logfile_names[logging.DEBUG]
         )
         with open(debug_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         debug_level = logging.getLevelName(logging.DEBUG)
-        self.assertIn(today, log_data[0])
-        self.assertIn(debug_level, log_data[0])
-        self.assertIn('variable', log_data[2])
+        self.assertIn(today, log_data)
+        self.assertIn(debug_level, log_data)
+        self.assertIn('variable', log_data)
 
     def testLoggerTreeLogFile(self):
         """logger_tree.log 파일에 로깅이 되었는지 테스트."""
@@ -427,12 +417,12 @@ class TestLogFileOptionsDay(unittest.TestCase):
             self.today_logfile_names[LOGGERTREE]
         )
         with open(logger_tree_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('root', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('root', log_data)
 
     @unittest.skipUnless(TEST_ON, '')
     def testErrorLogFile(self):
@@ -445,12 +435,12 @@ class TestLogFileOptionsDay(unittest.TestCase):
             self.today_logfile_names[logging.ERROR]
         )
         with open(error_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.ERROR)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('division by zero', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('division by zero', log_data)
 
     def testInfoLogFile(self):
         """Info 로깅 여부 확인 테스트."""
@@ -459,12 +449,12 @@ class TestLogFileOptionsDay(unittest.TestCase):
             self.today_logfile_names[logging.INFO]
         )
         with open(info_filepath, 'r', encoding='utf-8') as f:
-            log_data = f.readlines()
+            log_data = f.read()
         today = datetime.date.today().isoformat()
         levelname = logging.getLevelName(logging.INFO)
-        self.assertIn(today, log_data[0])
-        self.assertIn(levelname, log_data[0])
-        self.assertIn('mainfunc', log_data[1])
+        self.assertIn(today, log_data)
+        self.assertIn(levelname, log_data)
+        self.assertIn('mainfunc', log_data)
 
 
 class TestLogFileOptWeek(unittest.TestCase):
@@ -475,22 +465,27 @@ class TestLogFileOptWeek(unittest.TestCase):
     1. 주별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     """
-    main_called: bool = False
-    main_error_mode_called: bool = False
-    all_in_one_and_error_mode_called: bool = False
-    all_in_one_mode_called: bool = False
 
     def setUp(self):
         self.initsetup = InitLogFileOpt(DateOptions.WEEK)
 
         # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
         self.desc = self.shortDescription()
-        self.initsetup.setupForPrevMultiLogs(
-            TestLogFileOptWeek,
-            self.desc
-        )
+        self.initsetup.setupForPrevMultiLogs(self.desc)
 
         self.today_logfile_names = get_today_logfile_names()
+
+    def tearDown(self):
+        self.logmanager = LogFileManager(self.initsetup.base_dir_path)
+        for logfile in self.today_logfile_names.values():
+            self.logmanager.eraseAllInLogFile(
+                os.path.basename(self.initsetup.today_dir_path),
+                logfile
+            )
+        self.logmanager.eraseAllInLogFile(
+            os.path.basename(self.initsetup.today_dir_path),
+            datetime.date.today().isoformat() + '.log'
+        )
 
     def testWeekBaseDirExists(self):
         """주별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
@@ -605,22 +600,27 @@ class TestLogFileOptMonth(unittest.TestCase):
     1. 월별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     """
-    main_called: bool = False
-    main_error_mode_called: bool = False
-    all_in_one_and_error_mode_called: bool = False
-    all_in_one_mode_called: bool = False
 
     def setUp(self):
         self.initsetup = InitLogFileOpt(DateOptions.MONTH)
 
         # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
         self.desc = self.shortDescription()
-        self.initsetup.setupForPrevMultiLogs(
-            TestLogFileOptMonth,
-            self.desc
-        )
+        self.initsetup.setupForPrevMultiLogs(self.desc)
 
         self.today_logfile_names = get_today_logfile_names()
+
+    def tearDown(self):
+        self.logmanager = LogFileManager(self.initsetup.base_dir_path)
+        for logfile in self.today_logfile_names.values():
+            self.logmanager.eraseAllInLogFile(
+                os.path.basename(self.initsetup.today_dir_path),
+                logfile
+            )
+        self.logmanager.eraseAllInLogFile(
+            os.path.basename(self.initsetup.today_dir_path),
+            datetime.date.today().isoformat() + '.log'
+        )
 
     def testMonthBaseDirExists(self):
         """월별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
@@ -737,22 +737,27 @@ class TestLogFileOptYear(unittest.TestCase):
     1. 연별 로그 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     2. 로그 수준별 파일 분류가 되고, 로깅도 그에 따라 잘 되는가.
     """
-    main_called: bool = False
-    main_error_mode_called: bool = False
-    all_in_one_and_error_mode_called: bool = False
-    all_in_one_mode_called: bool = False
 
     def setUp(self):
         self.initsetup = InitLogFileOpt(DateOptions.YEAR)
 
         # mainfunc 다수 호출에 의해 생성될 수 있는 불필요한 로그 기록 방지용.
         self.desc = self.shortDescription()
-        self.initsetup.setupForPrevMultiLogs(
-            TestLogFileOptYear,
-            self.desc
-        )
+        self.initsetup.setupForPrevMultiLogs(self.desc)
 
         self.today_logfile_names = get_today_logfile_names()
+
+    def tearDown(self):
+        self.logmanager = LogFileManager(self.initsetup.base_dir_path)
+        for logfile in self.today_logfile_names.values():
+            self.logmanager.eraseAllInLogFile(
+                os.path.basename(self.initsetup.today_dir_path),
+                logfile
+            )
+        self.logmanager.eraseAllInLogFile(
+            os.path.basename(self.initsetup.today_dir_path),
+            datetime.date.today().isoformat() + '.log'
+        )
 
     def testYearBaseDirExists(self):
         """연별 로그 파일 저장 베이스 디렉토리 생성 여부 확인."""
@@ -891,3 +896,4 @@ if __name__ == '__main__':
     #test_only_one_logopt_date(TestLogFileOptWeek)
     #test_only_one_logopt_date(TestLogFileOptMonth)
     #test_only_one_logopt_date(TestLogFileOptYear)
+    

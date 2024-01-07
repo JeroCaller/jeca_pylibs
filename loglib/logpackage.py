@@ -1274,7 +1274,7 @@ class LogFileManager():
         
         """
         if not logfile_name.endswith('.log'):
-            logfile_name = '.'.join(logfile_name, 'log')
+            logfile_name = '.'.join([logfile_name, 'log'])
         
         if find_all_files:
             all_leaf_fds = dirs.get_all_in_rootdir(self.base_dir_path)
