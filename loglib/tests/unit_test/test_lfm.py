@@ -329,5 +329,12 @@ class TestRotateDirLog(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    def test_only_one(test_classname):
+        suite_obj = unittest.TestSuite()
+        suite_obj.addTest(unittest.makeSuite(test_classname))
+
+        runner = unittest.TextTestRunner()
+        runner.run(suite_obj)
     
+    unittest.main()
+    # test_only_one()

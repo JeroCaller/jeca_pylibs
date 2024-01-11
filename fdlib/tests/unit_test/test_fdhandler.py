@@ -215,6 +215,34 @@ class TestJsonHandler(unittest.TestCase):
             data = self.non_json_handler.read()
 
 
+class TestMakePackage(unittest.TestCase):
+    """make_package() 함수 테스트."""
+    def setUp(self):
+        self.basedir = r"..\testdata\makepkg"
+
+    def tearDown(self):
+        shutil.rmtree(self.basedir)
+
+    def testMakePackage(self):
+        """사용자가 원하는 대로 최상위 디렉토리와 그 아래 
+        여러 하위 디렉토리 및 파일들이 제대로 생성되는지 테스트.
+        """
+        entities = [
+            'README.md', 'subdir\\hi.txt', 'subdir\\submods\\my_python.py',
+            'logfiles\\debug.log',
+        ]
+        fdh.make_package(self.basedir, entities)
+
+        self.assertTrue(os.path.exists(self.basedir))
+        for en in entities:
+            fullpath = os.path.join(self.basedir, en)
+            self.assertTrue(os.path.exists(fullpath))
+            if os.path.splitext(en):
+                self.assertTrue(os.path.isfile(fullpath))
+            else:
+                self.assertTrue(os.path.isdir(fullpath))
+
+
 if __name__ == '__main__':
     def test_only(casename):
         """
@@ -225,10 +253,11 @@ if __name__ == '__main__':
         
         """
         suite_obj = unittest.TestSuite()
-        suite_obj.addTest(casename)
+        suite_obj.addTest(unittest.makeSuite(casename))
 
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
 
     unittest.main()
     #test_only(TestTxtHandler('testAppendText'))
+    #test_only(TestMakePackage)

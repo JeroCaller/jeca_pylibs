@@ -1,6 +1,12 @@
 changelog
 ---
 - - -
+> 2024-01-12
+> - fdlib
+>   - fdhandler.py에 make_package() 함수 추가 및 관련 테스트 코드 추가 및 실행. 테스트 실행 결과, 통과.
+> - loglib
+>   - 코드 수정 및 추가.
+
 > 2024-01-07
 > - loglib
 >   - 테스트 코드 수정.
