@@ -186,3 +186,52 @@ class JsonFileHandler():
         with open(self.json_file_path, 'r', encoding=self.encoding) as f:
             data = json.load(f)
         return data
+    
+
+def make_package(base_dir: str, entities: list[str]) -> (None):
+    """패키지 디렉토리를 생성하는 함수. 
+
+    Parameters
+    ----------
+    base_dir : str
+        생성하고자 하는 패키지의 최상위 디렉토리의 절대 경로. 
+        해당 디렉토리는 실존하지 않아도 이 함수에서 자동으로 생성함.
+    entities : list[str]
+        base_dir 매개변수로 지정한 최상위 디렉토리 안에 생성할 하위 
+        디렉토리 및 파일들의 절대 경로. 경로를 이 매개변수에 대입 시에 
+        base_dir의 절대 경로를 포함하여 넣지 말 것. 
+
+    Examples
+    --------
+
+    생성하고자 하는 패키지 구조가 다음과 같다고 해보자.
+
+    my_package/
+        README.md
+        subdir/
+            hi.txt
+            submods\
+                my_python.py
+        logfiles\
+            debug.log
+
+    base_dir 매개변수 대입 예)
+    base_dir = 'C:\\projects\\test\\my_package
+
+    entities 매개변수 대입 예)
+    entities = [
+        'README.md', 'subdir\\hi.txt', 'subdir\\submods\\my_python.py',
+        'logfiles\\debug.log',
+    ]
+    
+    """
+    os.makedirs(base_dir, exist_ok=True)
+
+    for en in entities:
+        fullpath = os.path.join(base_dir, en)
+        if os.path.splitext(fullpath)[1]:
+            super_dir = os.path.split(fullpath)[0]
+            os.makedirs(super_dir, exist_ok=True)
+            with open(fullpath, 'w', encoding='utf-8'): pass
+        else:
+            os.makedirs(fullpath, exist_ok=True)

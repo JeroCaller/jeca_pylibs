@@ -15,7 +15,8 @@ for i in range(1, 2+1):
 
 from logpackage import LogFileManager, EasySetLogFileEnv
 from logpackage import DEFAULT_LEVEL_LOG_FILE_NAMES
-from sub_modules.fdhandler import TextFileHandler, JsonFileHandler
+from sub_modules.fdhandler import (TextFileHandler, JsonFileHandler,
+make_package)
 from sub_modules.dirsearch import (validate_if_your_dir_with_ext,
 get_all_in_rootdir)
 from tools import DateTools, DateOptions
@@ -328,13 +329,86 @@ class TestRotateDirLog(unittest.TestCase):
             self.assertEqual(temp, ex_re)
 
 
+def write_log(rootdir: str, msg: str):
+    """루트 디렉토리 내 모든 .log 파일을 찾아 
+    일괄적으로 임의의 로그 메시지를 입력, 저장한다.
+    """
+    tfh = TextFileHandler()
+    leaf_entities = get_all_in_rootdir(rootdir)
+    for en in leaf_entities:
+        fullpath = os.path.join(rootdir, en)
+        if os.path.splitext(en)[1] != '.log':
+            continue
+        tfh.setTxtFilePath(fullpath)
+        tfh.writeNew(msg)
+
+
+class TestEraseLogFile(unittest.TestCase):
+    """로그 파일 내용을 지우는 메서드들에 대한 테스트 클래스."""
+    def setUp(self):
+        self.testdir = r'..\testdata\for-erase-log'
+        self.lfm = LogFileManager()
+        self.logmsg = "Test log message."
+        self.txthandler = TextFileHandler()
+
+    def tearDown(self):
+        shutil.rmtree(self.testdir)
+        self.txthandler.setTxtFilePath('')
+        self.lfm.setBaseDirPath('')
+
+    def testInitConfig(self):
+        """테스트를 위한 초기 설정이 잘 되는지 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'erase-all-1')
+        entities = [
+            'debug.log',
+            r'2024-01-12\\debug.log'
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+
+        # 초기 설정 여부 확인용 테스트.
+        self.assertTrue(os.path.exists(test_basedir))
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            self.txthandler.setTxtFilePath(fullpath)
+            self.assertTrue(self.txthandler.readContent('read'))
+
+    def testEraseAllInLogFileCase1(self):
+        """eraseAllInLogFile() 메서드에 대한 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'erase-all-1')
+        entities = [
+            'debug.log',
+            r'2024-01-12\\debug.log'
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        result = self.lfm.eraseAllInLogFile(*os.path.split(entities[1]), True)
+        self.assertTrue(result)
+
+        # test 1
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            self.txthandler.setTxtFilePath(fullpath)
+            self.assertEqual(
+                self.txthandler.readContent('read'), '', 
+                fullpath
+            )
+
+
 if __name__ == '__main__':
     def test_only_one(test_classname):
         suite_obj = unittest.TestSuite()
-        suite_obj.addTest(unittest.makeSuite(test_classname))
+        try:
+            suite_obj.addTest(unittest.makeSuite(test_classname))
+        except TypeError:
+            suite_obj.addTest(test_classname)
 
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
     
-    unittest.main()
-    # test_only_one()
+    #unittest.main()
+    test_only_one(TestEraseLogFile)

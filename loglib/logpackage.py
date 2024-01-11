@@ -1215,7 +1215,9 @@ class LogFileManager():
             """
             raise FileNotFoundError(err_msg)
         self.base_dir_path = base_dir_path
+
         self.txthandler = fdh.TextFileHandler(create_dir_ok=False)
+        self.dtool = tools.DateTools()
 
     def setBaseDirPath(self, new_basedir_path: DirPath):
         """로그 파일들을 하나로 모아 저장, 관리하고 있는 
@@ -1225,9 +1227,12 @@ class LogFileManager():
         ------
         FileNotFoundError
             new_basedir_path 매개변수로 입력한 경로가 존재하지 않거나 
-            디렉토리가 아닐 경우 발생.
+            디렉토리가 아닐 경우 발생. 단, 빈 문자열은 제외.
         
         """
+        if not new_basedir_path: 
+            self.base_dir_path = ''
+            return
         if not os.path.isdir(new_basedir_path):
             err_msg = """new_basedir_path 매개변수로 입력한 경로가 
             존재하지 않거나 디렉토리가 아닙니다.
@@ -1251,7 +1256,9 @@ class LogFileManager():
             만약 해당 로그 파일이 날짜 디렉토리 안이 아닌 
             베이스 디렉토리에 존재한다면 None을 입력.
             날짜 디렉토리명은 tools.DateTools().getDateStr() 메서드의 
-            반환 형태 중 하나와 맞아야 함. 
+            반환 형태 중 하나와 맞아야 함. 이는 정해진 날짜 문자열 형태를 
+            가지는 로그 디렉토리가 아닌 엉뚱한 디렉토리 내 로그 파일 내용을 
+            지우는 것을 방지하기 위함. 
             자세한 반환 형태는 해당 메서드의 독스트링의 Returns 참조.
         logfile_name : FileName(str)
             내용을 지우고자 하는 로그 파일 이름.
@@ -1280,14 +1287,15 @@ class LogFileManager():
             all_leaf_fds = dirs.get_all_in_rootdir(self.base_dir_path)
             count_removed = 0
             for fd in all_leaf_fds:
-                if os.path.basename(fd) == logfile_name:
+                filename = os.path.basename(fd)
+                if filename == logfile_name:
                     self.txthandler.setTxtFilePath(fd)
                     self.txthandler.writeNew('')
                     count_removed += 1
             if count_removed == 0: return False
         else:
             if date_dirname:
-                if tools.DateTools().isDateStr(date_dirname) is None:
+                if self.dtool.isDateStr(date_dirname) is None:
                     return False
                 logpath = os.path.join(
                     self.base_dir_path, date_dirname, logfile_name)
