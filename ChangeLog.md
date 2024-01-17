@@ -6,6 +6,7 @@ changelog
 >   - logpackage.py -> LogFileManager()
 >   - 테스트 코드 추가 및 테스트 진행 -> 테스트 성공.
 >   - 테스트를 통해 발견한 버그 수정.
+>   - 로그 파일에 대한 zip 파일 압축 기능 코드 설계(미완성).
 
 > 2024-01-12
 > - fdlib

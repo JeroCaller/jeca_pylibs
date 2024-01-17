@@ -12,6 +12,8 @@ import os
 import inspect
 import logging
 import shutil
+import zipfile
+import datetime
 from typing import Literal, TypeAlias
 
 import logexc
@@ -1507,58 +1509,190 @@ class LogFileManager():
                 dirpath = data[i][-1]
                 shutil.rmtree(dirpath)
 
-    def zipDateDir(
-            self,
-            date_dir: DirName,
-            left_original: bool
-        ):
-        """특정 날짜 디렉토리를 zip파일로 압축한다. 
+    def zipAllDateDirs(self, left_original: bool = True):
+        """오늘 날짜 디렉토리를 포함한 모든 날짜들의 로그 디렉토리들에 대해 
+        로그 파일들을 일괄적으로 zip 파일로 만들어 각각의 디렉토리 내부에 저장하는 
+        작업을 수행하는 메서드. 
 
-        zip파일은 지정된 베이스 디렉토리 안에 저장된다.
+        각 날짜 디렉토리에 대해 각각 수행된다. 
 
-        Parameters
-        ----------
-        date_dir : DirName(str)
-            압축할 날짜 디렉토리
-        left_original : bool
-            zip파일로 압축한 이후, 원본 날짜 디렉토리를 남길지를 결정하는 매개변수.
-            True시 원본 날짜 디렉토리를 남긴다.
-            False시 원본 날짜 디렉토리를 삭제한다. 
-        
-        """
-        ...
-    
-    def zipAllDateDir(
-            self,
-            separate: bool,
-            left_original: bool
-        ):
-        """지정된 베이스 디렉토리 내 모든 날짜 디렉토리들을 
+        로그 수준에 상관없이 날짜 디렉토리 내 로그 파일들을 모두 하나의 
         zip 파일로 압축한다. 
 
-        해당 zip파일들은 지정된 베이스 디렉토리 내에 저장된다.
-        
-        날짜 디렉토리가 아닌 개별 파일로 베이스 디렉토리에 저장된 로그 
-        파일들도 자동으로 압축해준다. 
+        zip 파일명은 해당 날짜 디렉토리명으로 한다. 
+
+        이미 날짜 디렉토리 내 zip 파일이 있는 경우, 해당 디렉토리에 대해 
+        아무런 작업도 하지 않는다. 
+
+        이전에 zip 압축을 하지 않다가 일괄적으로 압축하고자 할 때 쓰는 용도.
 
         Parameters
         ----------
-        separate : bool
-            지정된 베이스 디렉토리 내 모든 날짜 디렉토리들을 zip파일로 
-            압축할 떄, 날짜별로 따로따로 zip파일로 압축할지, 아니면 모든 
-            날짜 디렉토리들을 하나의 zip파일로 압축할지를 결정하는 매개변수.
-            True시 날짜별로 나눠서 zip파일로 압축.
-            False시 모든 날짜 디렉토리를 하나로 모아 하나의 zip파일로 압축.
-            베이스 디렉토리에 있는 개별 로그 파일들은 해당 매개변수 값에 상관없이
-            모두 하나의 zip파일로 압축된다. 날짜 디렉토리들과 섞여 있는 경우, 
-            날짜 디렉토리와는 구별되어 압축된다.
-        left_original : bool
-            zip파일로 압축한 뒤, 원본 디렉토리들을 그대로 남길지 결정하는 매개변수.
-            True시 원본 디렉토리 및 로그 파일들을 그대로 남긴다.
-            False시 원본 디렉토리 및 로그 파일들은 모두 삭제한다.
+        left_original : bool, default True
+            날짜 디렉토리 내 로그 파일들을 zip 파일로 압축한 뒤, 해당 
+            로그 파일들을 그대로 남길 것인지 삭제할 것인지를 결정하는 매개변수. 
+            True 시 해당 로그 파일들을 그대로 남긴다. 
+            False 시 해당 로그 파일들을 삭제하여 해당 날짜 디렉토리 내에는 
+            zip 파일만 남기도록 한다. 
+
+        See Also
+        --------
+        zipTodayDateDir : 
+            오늘 날짜 디렉토리를 최신으로 zip 파일로 압축하는 메서드. 
+            오늘 내에 로깅하는 프로그램의 실행을 여러 번 한 경우, 
+            항상 최신 로그 기록들이 담긴 로그 파일들을 zip 파일로 압축하여 
+            최신 zip 파일로 업데이트하려는 목적의 메서드. 
+        
+        Examples
+        --------
+        
+        다음의 로그 베이스 디렉토리 내부 구조가 존재한다고 가정하겠다. 
+
+        logfiles\
+            2024-01-17\
+                debug.log
+                info.log
+                error.log
+            2024-01-18\
+                debug.log
+                info.log
+                error.log
+
+        예1)
+        >>> lfm = LogFileManager(log_basedir)
+        >>> lfm.zipOldDateDirs(True)
+
+        예1에 의한 로그 베이스 디렉토리 내부 구조
+
+        logfiles\
+            2024-01-17\
+                debug.log
+                info.log
+                error.log
+                2024-01-17.zip
+            2024-01-18\
+                debug.log
+                info.log
+                error.log
+                2024-01-18.zip
+
+        예2)
+        >>> lfm = LogFileManager(log_basedir)
+        >>> lfm.zipOldDateDirs(False)
+
+        예2에 의한 로그 베이스 디렉토리 내부 구조
+
+        logfiles\
+            2024-01-17\
+                2024-01-17.zip
+            2024-01-18\
+                2024-01-18.zip
+            
+        """
+        in_basedir = os.listdir(self.base_dir_path)
+        for datedir in in_basedir:
+            if self.dtool.isDateStr(datedir) is None:
+                continue
+            datedir_path = os.path.join(self.base_dir_path, datedir)
+            in_datedir = os.listdir(datedir_path)
+            to_next_datedir = False
+            logfiles = []
+            for file in in_datedir:
+                if file.endswith('.zip'):
+                    to_next_datedir = True
+                    break
+                if not file.endswith('.log'):
+                    continue
+                logfiles.append(file)
+            if to_next_datedir:
+                continue
+
+            zipfile_path = os.path.join(
+                datedir_path, '.'.join([datedir, 'zip'])
+            )
+            with zipfile.ZipFile(zipfile_path, 'w') as zf:
+                for file in logfiles:
+                    fullpath = os.path.join(datedir_path, file)
+                    zf.write(fullpath)
+            
+            if not left_original:
+                for file in logfiles:
+                    fullpath = os.path.join(datedir_path, file)
+                    os.remove(fullpath)
+
+    def zipTodayDateDir(self):
+        """오늘 날짜 디렉토리 내 로그 파일들을 zip 파일로 압축하는 메서드. 
+        
+        로깅 작업을 적용한 프로그램의 실행 종료 후 나온 최신 로그 기록이 담긴 
+        로그 파일들을 zip 파일로 압축하여 항상 zip 파일을 최신으로 업데이트하는 용도. 
+
+        오늘 날짜 디렉토리 내에 이미 로그 파일들을 압축한 zip 파일이 존재해도 
+        기존 zip 파일에 새 로그 기록이 업데이트된 로그 파일들도 압축한다. 
+
+        Returns
+        -------
+        bool
+            True : zip 파일로 압축하는 데에 성공한 경우.
+            False : 오늘 날짜 디렉토리가 존재하지 않아 작업을 수행할 수 없는 경우. 
+            또는 어떠한 이유로 해당 디렉토리 내에 zip 파일이 존재하지 않는 경우.
+
+        """
+        _, dt, today_dir_path = self.dtool.searchDateDirBirth(
+            self.base_dir_path)[-1]
+        if dt.date() != datetime.date.today():
+            return False
+        
+        today_zippath = os.path.join(
+            today_dir_path, 
+            '.'.join([os.path.basename(today_dir_path), 'zip'])
+        )
+
+        in_datedir = os.listdir(today_dir_path)
+        logfiles = []
+        for file in in_datedir:
+            if not file.endswith('.log'):
+                continue
+            logfiles.append(file)
+        
+        with zipfile.ZipFile(today_zippath, 'w') as zf:
+            for file in logfiles:
+                fullpath = os.path.join(today_dir_path, file)
+                zf.write(fullpath)
+
+        if not os.path.exists(today_zippath):
+            return False
+        return True
+
+    def zipBaseDir(self, left_original: bool = True):
+        """로그 베이스 디렉토리를 통째로 하나의 zip 파일로 압축하여 이를 
+        베이스 디렉토리 내에 저장하는 메서드.
+        해당 zip 파일명은 로그 베이스 디렉토리명을 그대로 따온다. 
+
+        Parameters
+        ----------
+        left_original : bool, default True
+            압축 작업 실행 후, 로그 베이스 디렉토리 내 날짜 디렉토리, 
+            로그 파일들을 그대로 남길 것인지 결정하는 매개변수.
+            True 시 그대로 남긴다. 
+            False 시 로그 베이스 디렉토리 내 모든 디렉토리, 로그 파일들을 
+            삭제한다. (베이스 디렉토리 자체는 남긴다) 그러면 해당 
+            베이스 디렉토리 내에는 베이스 디렉토리 내부 파일들을 모두 그대로 
+            압축한 zip 파일 하나만 남을 것이다. 
         
         """
-        ...
+        in_basedir = dirs.get_all_in_rootdir(self.base_dir_path)
+        zippath = os.path.join(
+            self.base_dir_path, 
+            '.'.join([os.path.basename(self.base_dir_path), 'zip'])
+        )
+        with zipfile.ZipFile(zippath, 'w') as zf:
+            for entity in in_basedir:
+                if entity.endswith('.zip'):
+                    continue
+                zf.write(entity)
+        
+        if not left_original:
+            ...
 
 
 if __name__ == '__main__':

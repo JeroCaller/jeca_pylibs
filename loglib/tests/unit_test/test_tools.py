@@ -638,5 +638,17 @@ class TestSearchDateDirBirth(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    def test_only_one(test_classname):
+        suite_obj = unittest.TestSuite()
+        try:
+            suite_obj.addTest(unittest.makeSuite(test_classname))
+        except TypeError:
+            suite_obj.addTest(test_classname)
+
+        runner = unittest.TextTestRunner()
+        runner.run(suite_obj)
+
+    # 원하는 테스트 코드만 주석 해제하여 실행한다.
     unittest.main()
+    #test_only_one(TestSearchDateDirBirth('testWithRealDirs'))
     
