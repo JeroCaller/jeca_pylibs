@@ -1,6 +1,12 @@
 changelog
 ---
 - - -
+> 2024-01-17
+> - loglib
+>   - logpackage.py -> LogFileManager()
+>   - 테스트 코드 추가 및 테스트 진행 -> 테스트 성공.
+>   - 테스트를 통해 발견한 버그 수정.
+
 > 2024-01-12
 > - fdlib
 >   - fdhandler.py에 make_package() 함수 추가 및 관련 테스트 코드 추가 및 실행. 테스트 실행 결과, 통과.

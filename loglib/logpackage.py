@@ -1377,7 +1377,7 @@ class LogFileManager():
         
         """
         if not logfile_name.endswith('.log'):
-            logfile_name = '.'.join(logfile_name, 'log')
+            logfile_name = '.'.join([logfile_name, 'log'])
         if find_all_files:
             all_leaf_fds = dirs.get_all_in_rootdir(self.base_dir_path)
             count_removed = 0
@@ -1394,15 +1394,16 @@ class LogFileManager():
             if date_dirname:
                 if tools.DateTools().isDateStr(date_dirname) is None:
                     return False
-                logpath = os.path.join(self.base_dir_path, date_dirname)
-                logpath = os.path.join(logpath, logfile_name)
+                logpath = os.path.join(
+                    self.base_dir_path, date_dirname, logfile_name
+                )
             else:
                 logpath = os.path.join(self.base_dir_path, logfile_name)
             try:
                 os.remove(logpath)
             except FileNotFoundError:
                 return False
-            return True
+        return True
 
     def deleteAllInDateDir(
             self,

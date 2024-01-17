@@ -349,7 +349,7 @@ class TestEraseLogFile(unittest.TestCase):
         self.testdir = r'..\testdata\for-erase-log'
         self.lfm = LogFileManager()
         self.logmsg = "Test log message."
-        self.txthandler = TextFileHandler()
+        self.txthandler = TextFileHandler(create_dir_ok=False)
 
     def tearDown(self):
         shutil.rmtree(self.testdir)
@@ -389,7 +389,7 @@ class TestEraseLogFile(unittest.TestCase):
         result = self.lfm.eraseAllInLogFile(*os.path.split(entities[1]), True)
         self.assertTrue(result)
 
-        # test 1
+        # test
         for en in entities:
             fullpath = os.path.join(test_basedir, en)
             self.txthandler.setTxtFilePath(fullpath)
@@ -397,6 +397,254 @@ class TestEraseLogFile(unittest.TestCase):
                 self.txthandler.readContent('read'), '', 
                 fullpath
             )
+    
+    def testEraseAllInLogFileCase2(self):
+        """eraseAllInLogFile() 메서드에 대한 테스트."""
+        # 테스트를 위한 초기 설정
+        test_basedir = os.path.join(self.testdir, 'erase-all-2')
+        entities = [
+            'debug.log',
+            r'2024-01-16\debug.log',
+            r'2024-01-17\debug.log',
+            r'2024-01-17\info.log',
+            r'2024-01-17\debug (1).log',
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        # test
+        result = self.lfm.eraseAllInLogFile('2024-01-17', 'debug.log')
+        self.assertTrue(result)
+
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            self.txthandler.setTxtFilePath(fullpath)
+            logmsg = self.txthandler.readContent('read')
+            if en == r'2024-01-17\debug.log':
+                self.assertEqual(logmsg, '', fullpath)
+            else:
+                self.assertEqual(logmsg, self.logmsg, fullpath)
+
+    def testEraseAllInDateDirCase1(self):
+        """eraseAllInDateDir() 메서드 테스트."""
+        # 테스트를 위한 초기 설정
+        test_basedir = os.path.join(self.testdir, 'erase-date-1')
+        entities = [
+            'debug.log',
+            r'2024-01-16\debug.log',
+            r'2024-01-17\debug.log',
+            r'2024-01-17\debug (1).log',
+            r'2024-01-17\info.log',
+            r'2024-01-17\info (1).log',
+            r'2024-01-17\error.log',
+            r'2024-01-17\error (1).log',
+            r'2024-01-17\logger_tree.log',
+            r'2024-01-17\logger_tree (1).log',
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        # test
+        result = self.lfm.eraseAllInDateDir('2024-01-17')
+        self.assertTrue(result)
+
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            self.txthandler.setTxtFilePath(fullpath)
+            logmsg = self.txthandler.readContent('read')
+            if os.path.dirname(en) == '2024-01-17':
+                self.assertEqual(logmsg, '', fullpath)
+            else:
+                self.assertEqual(logmsg, self.logmsg, fullpath)
+
+
+class TestDeleteLogFile(unittest.TestCase):
+    """로그 파일들을 삭제하는 메서드들에 대한 테스트 클래스."""
+    def setUp(self):
+        self.testdir = r'..\testdata\for-del-log'
+        self.lfm = LogFileManager()
+        self.logmsg = "Test log message."
+        self.txthandler = TextFileHandler(create_dir_ok=False)
+
+    def tearDown(self):
+        shutil.rmtree(self.testdir)
+        self.lfm.setBaseDirPath('')
+        self.txthandler.setTxtFilePath('')
+
+    def testInitConfig(self):
+        """테스트를 위한 초기 설정이 잘 되는지 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'del-all-1')
+        entities = [
+            'debug.log',
+            r'2024-01-12\\debug.log'
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+
+        # 초기 설정 여부 확인용 테스트.
+        self.assertTrue(os.path.exists(test_basedir))
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            self.txthandler.setTxtFilePath(fullpath)
+            self.assertTrue(self.txthandler.readContent('read'))
+
+    def testDeleteLogFileCase1(self):
+        """deleteLogFile() 메서드 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'del-all-1')
+        entities = [
+            'debug.log',
+            r'2024-01-12\\debug.log',
+            r'2024-01-17\\debug.log',
+            r'2024-01-17\\debug (1).log',
+            r'2024-01-17\\info.log',
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        # test 
+        result = self.lfm.deleteLogFile('2024-01-17', 'debug.log', True)
+        self.assertTrue(result)
+
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            if os.path.basename(en) == 'debug.log':
+                self.assertFalse(os.path.exists(fullpath), fullpath)
+            else:
+                self.assertTrue(os.path.exists(fullpath), fullpath)
+                self.txthandler.setTxtFilePath(fullpath)
+                self.assertEqual(
+                    self.txthandler.readContent('read'), self.logmsg, 
+                    fullpath
+                )
+
+        # 테스트 디렉토리 내 남은 파일 수 테스트
+        all_leaf = get_all_in_rootdir(test_basedir)
+        self.assertEqual(len(all_leaf), 3)
+
+    def testDeleteLogFileCase2(self):
+        """deleteLogFile() 메서드 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'del-all-2')
+        entities = [
+            'debug.log',
+            r'2024-01-12\debug.log',
+            r'2024-01-17\debug.log',
+            r'2024-01-17\debug (1).log',
+            r'2024-01-17\info.log',
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        # test
+        target = r'2024-01-17\debug.log'
+        result = self.lfm.deleteLogFile(*os.path.split(target))
+        self.assertTrue(result)
+        
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            if en == target:
+                self.assertFalse(os.path.exists(fullpath), fullpath)
+            else:
+                self.assertTrue(os.path.exists(fullpath), fullpath)
+                self.txthandler.setTxtFilePath(fullpath)
+                self.assertEqual(
+                    self.txthandler.readContent('read'), self.logmsg,
+                    fullpath
+                )
+        
+        # 테스트 디렉토리 내 남은 파일 수 테스트
+        all_leaf = get_all_in_rootdir(test_basedir)
+        self.assertEqual(len(all_leaf), 4)
+
+    def testDeleteAllInDateDirCase1(self):
+        """deleteAllInDateDir() 메서드 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'del-date-1')
+        entities = [
+            'debug.log',
+            r'2024-01-12\debug.log',
+            r'2024-01-12\info.log',
+            r'2024-01-17\debug.log',
+            r'2024-01-17\debug (1).log',
+            r'2024-01-17\info.log',
+            r'2024-01-18\error.log',
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        # test
+        target_dir = '2024-01-17'
+        result = self.lfm.deleteAllInDateDir(target_dir)
+        self.assertTrue(result)
+        
+        target_dir_fullpath = os.path.join(test_basedir, target_dir)
+        self.assertTrue(os.path.exists(target_dir_fullpath))
+
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            if os.path.dirname(en) == target_dir:
+                self.assertFalse(os.path.exists(fullpath), fullpath)
+            else:
+                self.assertTrue(os.path.exists(fullpath), fullpath)
+                self.txthandler.setTxtFilePath(fullpath)
+                self.assertEqual(
+                    self.txthandler.readContent('read'),
+                    self.logmsg,
+                    fullpath
+                )
+
+        # 테스트 디렉토리 내 남은 파일 수 테스트
+        all_leaf = get_all_in_rootdir(test_basedir)
+        self.assertEqual(len(all_leaf), 5)
+
+    def testDeleteAllInDateDirCase2(self):
+        """deleteAllInDateDir() 메서드 테스트."""
+        # 테스트를 위한 초기 설정.
+        test_basedir = os.path.join(self.testdir, 'del-date-2')
+        entities = [
+            'debug.log',
+            r'2024-01-12\debug.log',
+            r'2024-01-12\info.log',
+            r'2024-01-17\debug.log',
+            r'2024-01-17\debug (1).log',
+            r'2024-01-17\info.log',
+            r'2024-01-18\error.log',
+        ]
+        make_package(test_basedir, entities)
+        write_log(test_basedir, self.logmsg)
+        self.lfm.setBaseDirPath(test_basedir)
+
+        # test
+        target_dir = '2024-01-17'
+        result = self.lfm.deleteAllInDateDir(target_dir, True)
+        self.assertTrue(result)
+        
+        target_dir_fullpath = os.path.join(test_basedir, target_dir)
+        self.assertFalse(os.path.exists(target_dir_fullpath))
+
+        for en in entities:
+            fullpath = os.path.join(test_basedir, en)
+            if os.path.dirname(en) == target_dir:
+                self.assertFalse(os.path.exists(fullpath), fullpath)
+            else:
+                self.assertTrue(os.path.exists(fullpath), fullpath)
+                self.txthandler.setTxtFilePath(fullpath)
+                self.assertEqual(
+                    self.txthandler.readContent('read'),
+                    self.logmsg,
+                    fullpath
+                )
+
+        # 테스트 디렉토리 내 남은 파일 수 테스트
+        all_leaf = get_all_in_rootdir(test_basedir)
+        self.assertEqual(len(all_leaf), 4)
 
 
 if __name__ == '__main__':
@@ -409,6 +657,8 @@ if __name__ == '__main__':
 
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
-    
-    #unittest.main()
-    test_only_one(TestEraseLogFile)
+
+    # 다음 중 원하는 테스트의 코드만 주석 해제할 것.
+    unittest.main()
+    #test_only_one(TestEraseLogFile)
+    #test_only_one(TestDeleteLogFile)
