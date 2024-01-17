@@ -5,6 +5,7 @@
 """
 import os
 import json
+import zipfile
 from typing import Literal
 
 
@@ -235,3 +236,97 @@ def make_package(base_dir: str, entities: list[str]) -> (None):
             with open(fullpath, 'w', encoding='utf-8'): pass
         else:
             os.makedirs(fullpath, exist_ok=True)
+
+# TODO - 테스트 코드 작성 및 테스트 실행 필요.
+def make_zip_structure(
+        rootdir: str,
+        zip_filename: str,
+        target_dir: str
+    ):
+    """zip 파일로 압축하고자 하는 루트 디렉토리 경로를 입력하면 
+    해당 디렉토리 내 구조를 그대로 유지한 채로 압축해주는 함수.
+
+    zip 파일로 압축한 뒤, 루트 디렉토리와 내부 파일, 디렉토리들은 
+    삭제되지 않고 그대로 보존된다. 
+
+    Parameters
+    ----------
+    rootdir : str
+        zip 파일로 압축하고자 하는 루트 디렉토리의 경로.
+    zip_file_path : str
+        zip 파일명.
+        ex) 'zipfile.zip'
+    target_dir : str
+        zip 파일을 저장할 경로. 해당 경로가 존재해야 한다. 
+        존재하지 않으면 FileNotFoundError가 발생한다. 
+    
+    """
+    
+    # dirsearch.py 모듈로부터 가져옴. 
+    # dirsearch.py 모듈과의 독립성을 유지하기 위해 
+    # 일부러 해당 함수 코드를 그대로 가져와 여기에 정의함.
+    def get_all_in_rootdir(
+        root_dir: str, 
+        to_abspath: bool = True
+    ) -> (list[str]):
+        """루트 디렉토리 경로가 주어지면 해당 디렉토리 내 
+        모든 파일들과 leaf 디렉토리의 경로들을 리스트로 묶어 반환.
+
+        Parameters
+        ----------
+        root_dir : str
+            루트 디렉토리 경로
+        to_abspath : bool, default True
+            루트 디렉토리 내 하위 파일 및 디렉토리들의 경로를 절대경로 또는 
+            상대경로로 반환할 지 결정하는 매개변수. 
+            True 시 절대경로로 반환한다.
+            False 시 상대경로로 반환한다. 상대경로는 root_dir 매개변수로 지정한 
+            루트 디렉토리명으로 시작한다.
+
+        Returns
+        -------
+        list[str]
+            루트 디렉토리 내 모든 최하위 파일 및 디렉토리들의 절대경로의 
+            리스트.
+        
+        """
+        results: list[str] = []
+        root_dir = os.path.abspath(root_dir)
+        
+        def search(dirpath: str):
+            entities = os.listdir(dirpath)
+            if not entities:
+                # leaf 디렉토리인 경우, 해당 디렉토리 경로를
+                # 결과에 추가한다.
+                results.append(dirpath)
+                return
+            for entity in entities:
+                if os.path.splitext(entity)[1]:
+                    # 해당 entity가 파일일 경우.
+                    results.append(os.path.join(dirpath, entity))
+                else:
+                    # 해당 entity가 디렉토리일 경우.
+                    subdir_path = os.path.join(dirpath, entity)
+                    search(subdir_path)
+
+        search(root_dir)
+        if not to_abspath:
+            temp_list = results.copy()
+            super_dir_abspath = os.path.dirname(root_dir)
+            for i, abspath in enumerate(temp_list):
+                temp_list[i] = abspath.replace(super_dir_abspath, '')
+                temp_list[i] = temp_list[i].lstrip('\\')
+            results = temp_list.copy()
+        return results
+    
+    leaf_path = get_all_in_rootdir(rootdir)
+    if not zip_filename.endswith('.zip'):
+        zip_filename += '.zip'
+    zip_path = os.path.join(target_dir, zip_filename)
+    with zipfile.ZipFile(zip_path, 'w') as zf:
+        root_dirname = os.path.dirname(rootdir)
+        for p in leaf_path:
+            zf.write(
+                p,
+                os.path.relpath(p, root_dirname)
+            )
