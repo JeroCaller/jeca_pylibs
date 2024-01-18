@@ -5,6 +5,7 @@ changelog
 > - fdlib
 >   - fdhandler.py
 >   - make_zip_structure() 함수에 대한 테스트 코드 구현 및 테스트 실행으로 발견한 버그 수정.
+>   - zip 파일을 압축 해제하고 특정 경로에 저장하는 과정을 조금 더 쉽게 한 decompress_zip() 함수 추가 및 관련 테스트 코드 구현 및 테스트 진행(테스트 성공).
 
 > 2024-01-17
 > - loglib

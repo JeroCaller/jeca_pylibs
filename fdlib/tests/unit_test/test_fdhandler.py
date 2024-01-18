@@ -245,8 +245,8 @@ class TestMakePackage(unittest.TestCase):
                 self.assertTrue(os.path.isdir(fullpath))
 
 
-class TestMakeZip(unittest.TestCase):
-    """make_zip_structure() 함수 테스트."""
+class TestZip(unittest.TestCase):
+    """make_zip_structure(), decompress_zip() 함수 테스트."""
     def setUp(self):
         self.test_root_dir_path = "..\\testdata\\zippkg"
         self.test_root_dirname = os.path.basename(self.test_root_dir_path)
@@ -264,18 +264,23 @@ class TestMakeZip(unittest.TestCase):
             fdh.make_package(self.test_root_dir_path, self.testdata_path)
 
         self.zip_filename = 'myzip.zip'
+
         self.extract_path = '..\\testdata\\zipresult'
         os.makedirs(self.extract_path, exist_ok=True)
+        
+        self.save_path = r"..\testdata\savezip"  # zip 파일 저장 경로
+        os.makedirs(self.save_path, exist_ok=True)
 
     def tearDown(self):
         shutil.rmtree(self.test_root_dir_path)
         shutil.rmtree(self.extract_path)
+        shutil.rmtree(self.save_path)
 
     def testMakeZipStructure(self):
         """make_zip_structure() 함수로 특정 루트 디렉토리 
         내부의 구조 그대로 압축하는 지 테스트.
         """
-        # test 1
+        # test
         # 압축할 대상 루트 디렉토리를 압축한 zip 파일을 해당 루트 디렉토리 
         # 안에 넣을 경우.
         fdh.make_zip_structure(
@@ -288,7 +293,7 @@ class TestMakeZip(unittest.TestCase):
         with zipfile.ZipFile(zippath) as zf:
             zf.extractall(self.extract_path)
         leaf_path = dirs.get_all_in_rootdir(
-            os.path.join(self.extract_path,self.test_root_dirname), False
+            os.path.join(self.extract_path, self.test_root_dirname), False
         )
         leaf_path = dirs.sort_length_order(leaf_path)
 
@@ -298,6 +303,26 @@ class TestMakeZip(unittest.TestCase):
                 self.testdata_path[i]
             )
             self.assertTrue(not lp.endswith('.zip'))
+
+    def testDecom(self):
+        """decompress_zip() 함수 테스트"""
+        fdh.make_zip_structure(
+            self.test_root_dir_path,
+            self.zip_filename,
+            self.save_path
+        )
+        zippath = os.path.join(self.save_path, self.zip_filename)
+        fdh.decompress_zip(zippath, self.extract_path)
+        leaf_path = dirs.get_all_in_rootdir(
+            os.path.join(self.extract_path, self.test_root_dirname), False
+        )
+        leaf_path = dirs.sort_length_order(leaf_path)
+
+        for i, lp in enumerate(leaf_path):
+            self.assertEqual(
+                os.path.relpath(lp, self.test_root_dirname),
+                self.testdata_path[i]
+            )
 
 
 if __name__ == '__main__':
@@ -318,7 +343,8 @@ if __name__ == '__main__':
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
 
+    # 테스트하고자 하는 코드만 주석 해제하여 진행.
     unittest.main()
     #test_only(TestTxtHandler('testAppendText'))
     #test_only(TestMakePackage)
-    #test_only(TestMakeZip)
+    #test_only(TestZip)

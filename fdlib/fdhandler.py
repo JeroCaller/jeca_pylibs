@@ -337,3 +337,18 @@ def make_zip_structure(
                 p,
                 os.path.relpath(p, root_dirname)
             )
+
+def decompress_zip(zippath: str, target_path: str):
+    """zip 파일을 압축 해제하여 이를 지정된 경로 내에 
+    저장하는 함수. 
+
+    Parameters
+    ---------
+    zippath : str
+        압축 해제하고자 하는 zip 파일 경로.
+    target_path : str
+        압축 해제한 결과물을 저장할 경로.
+    
+    """
+    with zipfile.ZipFile(zippath) as zf:
+        zf.extractall(target_path)
