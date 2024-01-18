@@ -3,6 +3,7 @@ import sys
 import os
 import shutil
 import json
+import zipfile
 
 from dirimporttool import get_super_dir_directly
 
@@ -11,6 +12,7 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 import fdhandler as fdh
+import dirsearch as dirs
 
 TEXT_SAMPLE = """바다는 푸른 물결이 흐르고, 물 위에는 태양이 빛나고 있습니다. 
 파도는 한 번씩 몰려와 모래사장에 부딪히며 화려한 물줄기를 만듭니다. 
@@ -243,6 +245,61 @@ class TestMakePackage(unittest.TestCase):
                 self.assertTrue(os.path.isdir(fullpath))
 
 
+class TestMakeZip(unittest.TestCase):
+    """make_zip_structure() 함수 테스트."""
+    def setUp(self):
+        self.test_root_dir_path = "..\\testdata\\zippkg"
+        self.test_root_dirname = os.path.basename(self.test_root_dir_path)
+        self.testdata_path = [
+            r'file6.txt',
+            r'sub_dir1\file1.txt',
+            r'sub_dir1\file2.txt',
+            r'sub_dir1\sub_sub_dir1\file3.txt',
+            r'sub_dir2\sub_sub_dir2\file4.txt',
+            r'sub_dir2\sub_sub_dir2\file5.txt',
+            r'sub_dir2\sub_sub_dir3',
+        ]
+        self.testdata_path = dirs.sort_length_order(self.testdata_path)
+        if not os.path.exists(self.test_root_dir_path):
+            fdh.make_package(self.test_root_dir_path, self.testdata_path)
+
+        self.zip_filename = 'myzip.zip'
+        self.extract_path = '..\\testdata\\zipresult'
+        os.makedirs(self.extract_path, exist_ok=True)
+
+    def tearDown(self):
+        shutil.rmtree(self.test_root_dir_path)
+        shutil.rmtree(self.extract_path)
+
+    def testMakeZipStructure(self):
+        """make_zip_structure() 함수로 특정 루트 디렉토리 
+        내부의 구조 그대로 압축하는 지 테스트.
+        """
+        # test 1
+        # 압축할 대상 루트 디렉토리를 압축한 zip 파일을 해당 루트 디렉토리 
+        # 안에 넣을 경우.
+        fdh.make_zip_structure(
+            self.test_root_dir_path,
+            self.zip_filename,
+            self.test_root_dir_path
+        )
+
+        zippath = os.path.join(self.test_root_dir_path, self.zip_filename)
+        with zipfile.ZipFile(zippath) as zf:
+            zf.extractall(self.extract_path)
+        leaf_path = dirs.get_all_in_rootdir(
+            os.path.join(self.extract_path,self.test_root_dirname), False
+        )
+        leaf_path = dirs.sort_length_order(leaf_path)
+
+        for i, lp in enumerate(leaf_path):
+            self.assertEqual(
+                os.path.relpath(lp, self.test_root_dirname),
+                self.testdata_path[i]
+            )
+            self.assertTrue(not lp.endswith('.zip'))
+
+
 if __name__ == '__main__':
     def test_only(casename):
         """
@@ -253,7 +310,10 @@ if __name__ == '__main__':
         
         """
         suite_obj = unittest.TestSuite()
-        suite_obj.addTest(unittest.makeSuite(casename))
+        try:
+            suite_obj.addTest(unittest.makeSuite(casename))
+        except TypeError:
+            suite_obj.addTest(casename)
 
         runner = unittest.TextTestRunner()
         runner.run(suite_obj)
@@ -261,3 +321,4 @@ if __name__ == '__main__':
     unittest.main()
     #test_only(TestTxtHandler('testAppendText'))
     #test_only(TestMakePackage)
+    #test_only(TestMakeZip)

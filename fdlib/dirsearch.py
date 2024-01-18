@@ -19,7 +19,7 @@ DirPath: TypeAlias = str
 def sort_length_order(
         liststr: list[str],
         ascending: bool = True
-    ):
+    ) -> (list[str]):
     """문자열들의 리스트를 입력값으로 받으면, 문자열들의 길이 순으로 
     정렬한 결과를 반환하는 함수.
 

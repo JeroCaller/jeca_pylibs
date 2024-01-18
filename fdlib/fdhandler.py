@@ -199,7 +199,7 @@ def make_package(base_dir: str, entities: list[str]) -> (None):
         해당 디렉토리는 실존하지 않아도 이 함수에서 자동으로 생성함.
     entities : list[str]
         base_dir 매개변수로 지정한 최상위 디렉토리 안에 생성할 하위 
-        디렉토리 및 파일들의 절대 경로. 경로를 이 매개변수에 대입 시에 
+        디렉토리 및 파일들의 경로. 경로를 이 매개변수에 대입 시에 
         base_dir의 절대 경로를 포함하여 넣지 말 것. 
 
     Examples
@@ -237,11 +237,11 @@ def make_package(base_dir: str, entities: list[str]) -> (None):
         else:
             os.makedirs(fullpath, exist_ok=True)
 
-# TODO - 테스트 코드 작성 및 테스트 실행 필요.
 def make_zip_structure(
         rootdir: str,
         zip_filename: str,
-        target_dir: str
+        target_dir: str,
+        exclude_zip: bool = True
     ):
     """zip 파일로 압축하고자 하는 루트 디렉토리 경로를 입력하면 
     해당 디렉토리 내 구조를 그대로 유지한 채로 압축해주는 함수.
@@ -259,6 +259,12 @@ def make_zip_structure(
     target_dir : str
         zip 파일을 저장할 경로. 해당 경로가 존재해야 한다. 
         존재하지 않으면 FileNotFoundError가 발생한다. 
+    exclude_zip : bool, default True
+        만약 루트 디렉토리 안에 zip 파일이 존재하면 해당 파일도 
+        같이 압축할 것인지 아니면 배제할 것인지에 대한 매개변수. 
+        True 시 내부의 모든 zip 파일들은 제외되고 나머지 파일, 
+        디렉토리들만 압축 대상이 된다. 
+        False 시 루트 디렉토리 내부의 zip 파일도 같이 압축된다.
     
     """
     
@@ -326,6 +332,7 @@ def make_zip_structure(
     with zipfile.ZipFile(zip_path, 'w') as zf:
         root_dirname = os.path.dirname(rootdir)
         for p in leaf_path:
+            if exclude_zip and p.endswith('.zip'): continue
             zf.write(
                 p,
                 os.path.relpath(p, root_dirname)

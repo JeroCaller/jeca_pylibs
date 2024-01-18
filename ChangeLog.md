@@ -1,6 +1,11 @@
 changelog
 ---
 - - -
+> 2024-01-18
+> - fdlib
+>   - fdhandler.py
+>   - make_zip_structure() 함수에 대한 테스트 코드 구현 및 테스트 실행으로 발견한 버그 수정.
+
 > 2024-01-17
 > - loglib
 >   - logpackage.py -> LogFileManager()
