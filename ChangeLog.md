@@ -1,6 +1,10 @@
 changelog
 ---
 - - -
+> 2024-01-19
+> - fdlib.dirsearch
+>   - 코드 수정 및 관련 테스트 코드 수정.
+
 > 2024-01-18
 > - fdlib
 >   - fdhandler.py

@@ -299,7 +299,7 @@ class TestZip(unittest.TestCase):
 
         for i, lp in enumerate(leaf_path):
             self.assertEqual(
-                os.path.relpath(lp, self.test_root_dirname),
+                lp,
                 self.testdata_path[i]
             )
             self.assertTrue(not lp.endswith('.zip'))
@@ -320,7 +320,7 @@ class TestZip(unittest.TestCase):
 
         for i, lp in enumerate(leaf_path):
             self.assertEqual(
-                os.path.relpath(lp, self.test_root_dirname),
+                lp,
                 self.testdata_path[i]
             )
 

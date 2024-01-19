@@ -50,25 +50,25 @@ class TestDirSearch(unittest.TestCase):
     def setUp(self):
         self.test_root_dir_path = "..\\testdata\\testpkg"
         self.testdata_path = [
-            r'testpkg\file6.txt',
-            r'testpkg\sub_dir1\file1.txt',
-            r'testpkg\sub_dir1\file2.txt',
-            r'testpkg\sub_dir1\sub_sub_dir1\file3.txt',
-            r'testpkg\sub_dir2\sub_sub_dir2\file4.txt',
-            r'testpkg\sub_dir2\sub_sub_dir2\file5.txt',
-            r'testpkg\sub_dir2\sub_sub_dir3',
+            r'file6.txt',
+            r'sub_dir1\file1.txt',
+            r'sub_dir1\file2.txt',
+            r'sub_dir1\sub_sub_dir1\file3.txt',
+            r'sub_dir2\sub_sub_dir2\file4.txt',
+            r'sub_dir2\sub_sub_dir2\file5.txt',
+            r'sub_dir2\sub_sub_dir3',
         ]
         self.testdata_path = dirs.sort_length_order(self.testdata_path)
 
     def testRootDirSearch(self):
-        """dirsearch.get_all_leaf_entity_path() 함수 테스트."""
+        """dirsearch.get_all_in_rootdir() 함수 테스트."""
         results = dirs.get_all_in_rootdir(self.test_root_dir_path, False)
         results = dirs.sort_length_order(results)
         for i, path in enumerate(results):
             self.assertEqual(path, self.testdata_path[i])
 
     def testPathTreeFromSearch(self):
-        """get_pathtree_obj_from_root_dir() 함수 테스트."""
+        """get_ptree_from_rootdir() 함수 테스트."""
         result = dirs.get_ptree_from_rootdir(
             self.test_root_dir_path, False)
         self.assertIsInstance(result, PathTree)
@@ -142,4 +142,23 @@ class TestValidateIfDir(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    def test_only(casename):
+        """
+        Parameters
+        ----------
+        casename : callable
+            테스트 하고자 하는 테스트 클래스명 또는 메서드명
+        
+        """
+        suite_obj = unittest.TestSuite()
+        try:
+            suite_obj.addTest(unittest.makeSuite(casename))
+        except TypeError:
+            suite_obj.addTest(casename)
+
+        runner = unittest.TextTestRunner()
+        runner.run(suite_obj)
+
+    # 테스트하고자 하는 코드만 주석 해제하여 진행.
     unittest.main()
+    #test_only(TestDirSearch)
