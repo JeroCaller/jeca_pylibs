@@ -8,6 +8,8 @@ changelog
 >   - shutil.rmtree()에서 루트 디렉토리만 삭제하지 않는 기능으로 만든 함수 rmtree_except_root() 구현 및 관련 테스트 코드 추가. 
 > - loglib.sub_modules
 >   - 모듈 업데이트.
+> - loglib.logpackage
+>   - zip 압축 기능 초기 설계 완료.
 
 > 2024-01-18
 > - fdlib

@@ -1663,36 +1663,31 @@ class LogFileManager():
             return False
         return True
 
-    def zipBaseDir(self, left_original: bool = True):
+    def zipBaseDir(
+            self, 
+            target_dir: str | None = None,
+        ):
         """로그 베이스 디렉토리를 통째로 하나의 zip 파일로 압축하여 이를 
-        베이스 디렉토리 내에 저장하는 메서드.
+        지정된 위치에 저장하는 메서드. 
         해당 zip 파일명은 로그 베이스 디렉토리명을 그대로 따온다. 
 
         Parameters
         ----------
-        left_original : bool, default True
-            압축 작업 실행 후, 로그 베이스 디렉토리 내 날짜 디렉토리, 
-            로그 파일들을 그대로 남길 것인지 결정하는 매개변수.
-            True 시 그대로 남긴다. 
-            False 시 로그 베이스 디렉토리 내 모든 디렉토리, 로그 파일들을 
-            삭제한다. (베이스 디렉토리 자체는 남긴다) 그러면 해당 
-            베이스 디렉토리 내에는 베이스 디렉토리 내부 파일들을 모두 그대로 
-            압축한 zip 파일 하나만 남을 것이다. 
+        target_dir : str | None, default None
+            zip 파일을 저장할 경로. 실제로 존재하는 경로여야 하며, 
+            그렇지 않을 경우 에러가 발생할 수 있다. 
+            None을 입력 시 로그 베이스 디렉토리 내에 저장한다. 
         
         """
-        in_basedir = dirs.get_all_in_rootdir(self.base_dir_path)
-        zippath = os.path.join(
-            self.base_dir_path, 
-            '.'.join([os.path.basename(self.base_dir_path), 'zip'])
+        zipname = '.'.join([os.path.basename(self.base_dir_path), 'zip'])
+        if target_dir is None:
+            target_dir = self.base_dir_path
+
+        fdh.make_zip_structure(
+            self.base_dir_path,
+            zipname,
+            target_dir
         )
-        with zipfile.ZipFile(zippath, 'w') as zf:
-            for entity in in_basedir:
-                if entity.endswith('.zip'):
-                    continue
-                zf.write(entity)
-        
-        if not left_original:
-            ...
 
 
 if __name__ == '__main__':
