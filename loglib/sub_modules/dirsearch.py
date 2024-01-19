@@ -25,7 +25,7 @@ DirPath: TypeAlias = str
 def sort_length_order(
         liststr: list[str],
         ascending: bool = True
-    ):
+    ) -> (list[str]):
     """문자열들의 리스트를 입력값으로 받으면, 문자열들의 길이 순으로 
     정렬한 결과를 반환하는 함수.
 
@@ -87,8 +87,8 @@ def get_all_in_rootdir(
         루트 디렉토리 내 하위 파일 및 디렉토리들의 경로를 절대경로 또는 
         상대경로로 반환할 지 결정하는 매개변수. 
         True 시 절대경로로 반환한다.
-        False 시 상대경로로 반환한다. 상대경로는 root_dir 매개변수로 지정한 
-        루트 디렉토리명으로 시작한다.
+        False 시 상대경로로 반환한다. 여기서 상대경로는 해당 절대경로에서 
+        root_dir로 지정된 루트 디렉토리의 절대경로를 뺀 경로이다.
 
     Returns
     -------
@@ -105,7 +105,8 @@ def get_all_in_rootdir(
         if not entities:
             # leaf 디렉토리인 경우, 해당 디렉토리 경로를
             # 결과에 추가한다.
-            results.append(dirpath)
+            if dirpath != root_dir:
+                results.append(dirpath)
             return
         for entity in entities:
             if os.path.splitext(entity)[1]:
@@ -117,13 +118,11 @@ def get_all_in_rootdir(
                 search(subdir_path)
 
     search(root_dir)
+
     if not to_abspath:
-        temp_list = results.copy()
-        super_dir_abspath = os.path.dirname(root_dir)
-        for i, abspath in enumerate(temp_list):
-            temp_list[i] = abspath.replace(super_dir_abspath, '')
-            temp_list[i] = temp_list[i].lstrip('\\')
-        results = temp_list.copy()
+        for i, res in enumerate(results):
+            results[i] = os.path.relpath(res, root_dir)
+    
     return results
 
 def get_ptree_from_rootdir(
@@ -330,13 +329,5 @@ def validate_if_your_dir_with_ext(
     return is_passed, failed_because
 
 if __name__ == '__main__':
-    # 테스트 용 코드.
-    root_dir_path \
-        = r'C:\my_coding_works\python\my_python_libs\fdlib\tests\fixtures\testpkg'
-    result = get_all_in_rootdir(root_dir_path, False)
-    from pprint import pprint
-    pprint(result)
-
-    treestr = visualize_rootdir(root_dir_path, False)
-    print(treestr)
+    pass
     

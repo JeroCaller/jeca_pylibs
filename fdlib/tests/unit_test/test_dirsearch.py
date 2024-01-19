@@ -1,5 +1,6 @@
 import unittest
 import sys
+import os
 
 from dirimporttool import get_super_dir_directly
 
@@ -62,10 +63,20 @@ class TestDirSearch(unittest.TestCase):
 
     def testRootDirSearch(self):
         """dirsearch.get_all_in_rootdir() 함수 테스트."""
+        # test 1
         results = dirs.get_all_in_rootdir(self.test_root_dir_path, False)
         results = dirs.sort_length_order(results)
         for i, path in enumerate(results):
             self.assertEqual(path, self.testdata_path[i])
+
+        # test 2
+        # 빈 디렉토리일 경우.
+        temp_dirpath = r'..\testdata\emptydir'
+        os.makedirs(temp_dirpath, exist_ok=True)
+        results = dirs.get_all_in_rootdir(temp_dirpath)
+        self.assertEqual(results, [])
+        # 생성된 빈 디렉토리 삭제
+        os.rmdir(temp_dirpath)
 
     def testPathTreeFromSearch(self):
         """get_ptree_from_rootdir() 함수 테스트."""

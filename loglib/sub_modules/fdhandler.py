@@ -5,6 +5,8 @@
 """
 import os
 import json
+import zipfile
+import shutil
 from typing import Literal
 
 
@@ -198,7 +200,7 @@ def make_package(base_dir: str, entities: list[str]) -> (None):
         해당 디렉토리는 실존하지 않아도 이 함수에서 자동으로 생성함.
     entities : list[str]
         base_dir 매개변수로 지정한 최상위 디렉토리 안에 생성할 하위 
-        디렉토리 및 파일들의 절대 경로. 경로를 이 매개변수에 대입 시에 
+        디렉토리 및 파일들의 경로. 경로를 이 매개변수에 대입 시에 
         base_dir의 절대 경로를 포함하여 넣지 말 것. 
 
     Examples
@@ -235,3 +237,137 @@ def make_package(base_dir: str, entities: list[str]) -> (None):
             with open(fullpath, 'w', encoding='utf-8'): pass
         else:
             os.makedirs(fullpath, exist_ok=True)
+
+def rmtree_except_root(target_dir: str):
+    """주어진 루트 디렉토리에 대해, 루트 디렉토리 자체는 
+    삭제하지 않고 내부의 모든 파일, 디렉토리들만 삭제하는 함수. 
+    shutil.rmtree() 함수는 루트 디렉토리까지 모두 삭제하기에 대안으로 만든 함수. 
+
+    Parameters
+    ----------
+    target_dir : str
+        내부의 모든 파일, 디렉토리들을 삭제하고자 하는 루트 디렉토리. 
+    
+    """
+    for entity in os.listdir(target_dir):
+        entity_path = os.path.join(target_dir, entity)
+        if os.path.isdir(entity_path):
+            shutil.rmtree(entity_path)
+        else:
+            os.remove(entity_path)
+
+def make_zip_structure(
+        rootdir: str,
+        zip_filename: str,
+        target_dir: str,
+        exclude_zip: bool = True
+    ):
+    """zip 파일로 압축하고자 하는 루트 디렉토리 경로를 입력하면 
+    해당 디렉토리 내 구조를 그대로 유지한 채로 압축해주는 함수.
+
+    zip 파일로 압축한 뒤, 루트 디렉토리와 내부 파일, 디렉토리들은 
+    삭제되지 않고 그대로 보존된다. 
+
+    Parameters
+    ----------
+    rootdir : str
+        zip 파일로 압축하고자 하는 루트 디렉토리의 경로.
+    zip_file_path : str
+        zip 파일명.
+        ex) 'zipfile.zip'
+    target_dir : str
+        zip 파일을 저장할 경로. 해당 경로가 존재해야 한다. 
+        존재하지 않으면 FileNotFoundError가 발생한다. 
+    exclude_zip : bool, default True
+        만약 루트 디렉토리 안에 zip 파일이 존재하면 해당 파일도 
+        같이 압축할 것인지 아니면 배제할 것인지에 대한 매개변수. 
+        True 시 내부의 모든 zip 파일들은 제외되고 나머지 파일, 
+        디렉토리들만 압축 대상이 된다. 
+        False 시 루트 디렉토리 내부의 zip 파일도 같이 압축된다.
+    
+    """
+    
+    # dirsearch.py 모듈로부터 가져옴. 
+    # dirsearch.py 모듈과의 독립성을 유지하기 위해 
+    # 일부러 해당 함수 코드를 그대로 가져와 여기에 정의함.
+    def get_all_in_rootdir(
+        root_dir: str, 
+        to_abspath: bool = True
+    ) -> (list[str]):
+        """루트 디렉토리 경로가 주어지면 해당 디렉토리 내 
+        모든 파일들과 leaf 디렉토리의 경로들을 리스트로 묶어 반환.
+
+        Parameters
+        ----------
+        root_dir : str
+            루트 디렉토리 경로
+        to_abspath : bool, default True
+            루트 디렉토리 내 하위 파일 및 디렉토리들의 경로를 절대경로 또는 
+            상대경로로 반환할 지 결정하는 매개변수. 
+            True 시 절대경로로 반환한다.
+            False 시 상대경로로 반환한다. 상대경로는 root_dir 매개변수로 지정한 
+            루트 디렉토리명으로 시작한다.
+
+        Returns
+        -------
+        list[str]
+            루트 디렉토리 내 모든 최하위 파일 및 디렉토리들의 절대경로의 
+            리스트.
+        
+        """
+        results: list[str] = []
+        root_dir = os.path.abspath(root_dir)
+        
+        def search(dirpath: str):
+            entities = os.listdir(dirpath)
+            if not entities:
+                # leaf 디렉토리인 경우, 해당 디렉토리 경로를
+                # 결과에 추가한다.
+                results.append(dirpath)
+                return
+            for entity in entities:
+                if os.path.splitext(entity)[1]:
+                    # 해당 entity가 파일일 경우.
+                    results.append(os.path.join(dirpath, entity))
+                else:
+                    # 해당 entity가 디렉토리일 경우.
+                    subdir_path = os.path.join(dirpath, entity)
+                    search(subdir_path)
+
+        search(root_dir)
+        if not to_abspath:
+            temp_list = results.copy()
+            super_dir_abspath = os.path.dirname(root_dir)
+            for i, abspath in enumerate(temp_list):
+                temp_list[i] = abspath.replace(super_dir_abspath, '')
+                temp_list[i] = temp_list[i].lstrip('\\')
+            results = temp_list.copy()
+        return results
+    
+    leaf_path = get_all_in_rootdir(rootdir)
+    if not zip_filename.endswith('.zip'):
+        zip_filename += '.zip'
+    zip_path = os.path.join(target_dir, zip_filename)
+    with zipfile.ZipFile(zip_path, 'w') as zf:
+        root_dirname = os.path.dirname(rootdir)
+        for p in leaf_path:
+            if exclude_zip and p.endswith('.zip'): continue
+            zf.write(
+                p,
+                os.path.relpath(p, root_dirname)
+            )
+
+def decompress_zip(zippath: str, target_path: str):
+    """zip 파일을 압축 해제하여 이를 지정된 경로 내에 
+    저장하는 함수. 
+
+    Parameters
+    ---------
+    zippath : str
+        압축 해제하고자 하는 zip 파일 경로.
+    target_path : str
+        압축 해제한 결과물을 저장할 경로.
+    
+    """
+    with zipfile.ZipFile(zippath) as zf:
+        zf.extractall(target_path)

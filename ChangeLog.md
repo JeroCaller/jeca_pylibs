@@ -4,6 +4,10 @@ changelog
 > 2024-01-19
 > - fdlib.dirsearch
 >   - 코드 수정 및 관련 테스트 코드 수정.
+> - fdlib.fdhandler
+>   - shutil.rmtree()에서 루트 디렉토리만 삭제하지 않는 기능으로 만든 함수 rmtree_except_root() 구현 및 관련 테스트 코드 추가. 
+> - loglib.sub_modules
+>   - 모듈 업데이트.
 
 > 2024-01-18
 > - fdlib

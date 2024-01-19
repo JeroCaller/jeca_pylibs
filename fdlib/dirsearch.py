@@ -99,7 +99,8 @@ def get_all_in_rootdir(
         if not entities:
             # leaf 디렉토리인 경우, 해당 디렉토리 경로를
             # 결과에 추가한다.
-            results.append(dirpath)
+            if dirpath != root_dir:
+                results.append(dirpath)
             return
         for entity in entities:
             if os.path.splitext(entity)[1]:

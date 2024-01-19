@@ -245,6 +245,45 @@ class TestMakePackage(unittest.TestCase):
                 self.assertTrue(os.path.isdir(fullpath))
 
 
+class TestMyRmTree(unittest.TestCase):
+    """rmtree_except_root() 함수 테스트."""
+    def setUp(self):
+        self.test_root_dir_path = "..\\testdata\\test-rm"
+        self.testdata_path = [
+            r'file6.txt',
+            r'sub_dir1\file1.txt',
+            r'sub_dir1\file2.txt',
+            r'sub_dir1\sub_sub_dir1\file3.txt',
+            r'sub_dir2\sub_sub_dir2\file4.txt',
+            r'sub_dir2\sub_sub_dir2\file5.txt',
+            r'sub_dir2\sub_sub_dir3',
+        ]
+        self.testdata_path = dirs.sort_length_order(self.testdata_path)
+        if not os.path.exists(self.test_root_dir_path):
+            fdh.make_package(self.test_root_dir_path, self.testdata_path)
+        
+    def tearDown(self):
+        shutil.rmtree(self.test_root_dir_path)
+
+    def testMyRmTree(self):
+        # setUp 메서드를 통해 실제로 테스트 패키지 구조가 생성
+        # 되었는지 확인.
+        leaf_entities = dirs.get_all_in_rootdir(
+            self.test_root_dir_path, False
+        )
+        leaf_entities = dirs.sort_length_order(leaf_entities)
+        self.assertEqual(leaf_entities, self.testdata_path)
+
+        # test 1
+        fdh.rmtree_except_root(self.test_root_dir_path)
+        
+        self.assertTrue(os.path.exists(self.test_root_dir_path))
+        self.assertEqual(
+            dirs.get_all_in_rootdir(self.test_root_dir_path, False), 
+            []
+        )
+
+
 class TestZip(unittest.TestCase):
     """make_zip_structure(), decompress_zip() 함수 테스트."""
     def setUp(self):
@@ -348,3 +387,4 @@ if __name__ == '__main__':
     #test_only(TestTxtHandler('testAppendText'))
     #test_only(TestMakePackage)
     #test_only(TestZip)
+    #test_only(TestMyRmTree)

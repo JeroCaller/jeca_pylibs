@@ -6,6 +6,7 @@
 import os
 import json
 import zipfile
+import shutil
 from typing import Literal
 
 
@@ -236,6 +237,24 @@ def make_package(base_dir: str, entities: list[str]) -> (None):
             with open(fullpath, 'w', encoding='utf-8'): pass
         else:
             os.makedirs(fullpath, exist_ok=True)
+
+def rmtree_except_root(target_dir: str):
+    """주어진 루트 디렉토리에 대해, 루트 디렉토리 자체는 
+    삭제하지 않고 내부의 모든 파일, 디렉토리들만 삭제하는 함수. 
+    shutil.rmtree() 함수는 루트 디렉토리까지 모두 삭제하기에 대안으로 만든 함수. 
+
+    Parameters
+    ----------
+    target_dir : str
+        내부의 모든 파일, 디렉토리들을 삭제하고자 하는 루트 디렉토리. 
+    
+    """
+    for entity in os.listdir(target_dir):
+        entity_path = os.path.join(target_dir, entity)
+        if os.path.isdir(entity_path):
+            shutil.rmtree(entity_path)
+        else:
+            os.remove(entity_path)
 
 def make_zip_structure(
         rootdir: str,
