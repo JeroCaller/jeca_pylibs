@@ -16,7 +16,7 @@ for i in range(1, 2+1):
 from logpackage import LogFileManager, EasySetLogFileEnv
 from logpackage import DEFAULT_LEVEL_LOG_FILE_NAMES
 from sub_modules.fdhandler import (TextFileHandler, JsonFileHandler,
-make_package)
+make_package, decompress_zip)
 from sub_modules.dirsearch import (validate_if_your_dir_with_ext,
 get_all_in_rootdir)
 from tools import DateTools, DateOptions
@@ -100,7 +100,9 @@ def get_datedir_path(leaf_entities: list[str]) -> (list[str]):
             results.append(dirpath)
     return results
 
-def get_datedir_filenames(leaf_entities: list[str]):
+def get_datedir_filenames(
+        leaf_entities: list[str],
+    ) -> (dict[str, list[str]]):
     """루트 디렉토리 내 하위 디렉토리 내 파일들의 경로를 받았을 때 
     날짜 디렉토리와 그 디렉토리 아래 파일들의 이름을 아이템으로 하는 
     딕셔너리 반환 함수.
@@ -118,8 +120,6 @@ def get_datedir_filenames(leaf_entities: list[str]):
     """
     results: dict[str, list[str]] = {}  # dict[datedir: list[filenames]]
     for en in leaf_entities:
-        if not os.path.isfile(en): continue
-        
         datedir = os.path.basename(os.path.dirname(en))
         filename = os.path.basename(en)
         if datedir not in results:
@@ -647,6 +647,234 @@ class TestDeleteLogFile(unittest.TestCase):
         self.assertEqual(len(all_leaf), 4)
 
 
+class TestZip(unittest.TestCase):
+    """LogFileManager() 클래스 내 zip 관련 메서드 테스트."""
+    def setUp(self):
+        self.test_rootdir_path = r'..\testdata\forzipdir'
+        self.entities = [
+            '2024-01-16\\debug_2024-01-16.log',
+            '2024-01-16\\error_2024-01-16.log',
+            '2024-01-16\\info_2024-01-16.log',
+            '2024-01-16\\logger_tree_2024-01-16.log',
+            '2024-01-17\\debug_2024-01-17.log',
+            '2024-01-17\\error_2024-01-17.log',
+            '2024-01-17\\info_2024-01-17.log',
+            '2024-01-17\\logger_tree_2024-01-17.log',
+            '2024-01-19\\debug_2024-01-19.log',
+            '2024-01-19\\error_2024-01-19.log',
+            '2024-01-19\\info_2024-01-19.log',
+            '2024-01-19\\logger_tree_2024-01-19.log'
+        ]
+        if not os.path.exists(self.test_rootdir_path):
+            make_package(self.test_rootdir_path, self.entities)
+        
+        self.datedirs = get_datedir_path(self.entities)
+        self.datefd = get_datedir_filenames(self.entities)
+        
+        # zip 파일 압축 해제한 결과물을 임시로 저장할 경로.
+        self.tempdir = r'..\testdata\zipresults'
+        self.zipsave = r'..\testdata\zipsave'
+        self.zipdirlist = [self.tempdir, self.zipsave]
+        for zd in self.zipdirlist:
+            os.makedirs(zd, exist_ok=True)
+
+        self.lfm = LogFileManager(self.test_rootdir_path)
+        
+    def tearDown(self):
+        shutil.rmtree(self.test_rootdir_path)
+        for zd in self.zipdirlist:
+            shutil.rmtree(zd)
+        pass
+
+    def testZipAllDateDirsCase1(self):
+        """zipAllDateDirs() 메서드 테스트."""
+        self.lfm.zipAllDateDirs()
+
+        # zip 파일이 지정된 곳에 생성되었는지, 
+        # 로그 파일들은 그대로 남아있는지 테스트.
+        zippath = []
+        for datedir in os.listdir(self.test_rootdir_path):
+            dirpath = os.path.join(self.test_rootdir_path, datedir)
+            lognum = 0
+            for file in os.listdir(dirpath):
+                filepath = os.path.join(dirpath, file)
+                if filepath.endswith('.log'):
+                    lognum += 1
+                else:
+                    filename, ext = os.path.splitext(file)
+                    self.assertEqual(filename, datedir)
+                    self.assertEqual(ext, '.zip')
+                    zippath.append(filepath)
+            self.assertEqual(lognum, len(self.datefd[datedir]))
+
+        # zip 파일 내부 구조 테스트.
+        for i, zipfile in enumerate(zippath):
+            subdirpath = os.path.join(self.tempdir, f'temp{i+1}')
+            os.mkdir(subdirpath)
+            decompress_zip(zipfile, subdirpath)
+
+            zip_leaf = get_all_in_rootdir(subdirpath, False)
+            zipname = os.path.splitext(os.path.basename(zipfile))[0]
+            self.assertEqual(os.listdir(subdirpath)[0], zipname)
+            self.assertEqual(len(zip_leaf), 4)
+            for en in zip_leaf:
+                self.assertEqual(os.path.splitext(en)[1], '.log')
+
+    def testZipAllDateDirsCase2(self):
+        """zipAllDateDirs() 메서드 테스트.
+        로그 파일들을 zip 파일로 압축한 후, 원본 로그 파일들을 
+        지우는 기능에 대한 테스트.
+        """
+        self.lfm.zipAllDateDirs(False)
+
+        # zip 파일이 지정된 곳에 생성되었는지, 
+        # 로그 파일들은 삭제되었는지 테스트.
+        zippath = []
+        for datedir in os.listdir(self.test_rootdir_path):
+            dirpath = os.path.join(self.test_rootdir_path, datedir)
+            lognum = 0
+            for file in os.listdir(dirpath):
+                filepath = os.path.join(dirpath, file)
+                if filepath.endswith('.log'):
+                    lognum += 1
+                else:
+                    filename, ext = os.path.splitext(file)
+                    self.assertEqual(filename, datedir)
+                    self.assertEqual(ext, '.zip')
+                    zippath.append(filepath)
+            self.assertEqual(lognum, 0)
+
+        # zip 파일 내부 구조 테스트.
+        for i, zipfile in enumerate(zippath):
+            subdirpath = os.path.join(self.tempdir, f'temp{i+1}')
+            os.mkdir(subdirpath)
+            decompress_zip(zipfile, subdirpath)
+
+            zip_leaf = get_all_in_rootdir(subdirpath, False)
+            zipname = os.path.splitext(os.path.basename(zipfile))[0]
+            self.assertEqual(os.listdir(subdirpath)[0], zipname)
+            self.assertEqual(len(zip_leaf), 4)
+            for en in zip_leaf:
+                self.assertEqual(os.path.splitext(en)[1], '.log')
+
+    def testZipTodayDateDir(self):
+        """zipTodayDateDir() 메서드 테스트."""
+        # 실행 날짜 기준 날짜 디렉토리 및 하위 로그 파일 생성
+        today_dir = DateTools().getTodaysDateStr()
+        todaydirpath = os.path.join(self.test_rootdir_path, today_dir)
+        os.makedirs(todaydirpath, exist_ok=True)
+        logfiles = ['debug.log', 'error.log', 'info.log', 'logger_tree.log']
+        for logf in logfiles:
+            filepath = os.path.join(todaydirpath, logf)
+            with open(filepath, 'w'): pass
+        
+        zipfilename = '.'.join([today_dir, 'zip'])
+        zippath = os.path.join(todaydirpath, zipfilename)
+        
+        exec_result = self.lfm.zipTodayDateDir()
+        self.assertTrue(exec_result)
+        self.assertTrue(os.path.exists(zippath))
+        
+        # 실행 날짜 디렉토리 내 zip 파일 생성 여부 및 로그 파일 존재 여부 테스트.
+        in_todaydir = os.listdir(todaydirpath)
+        self.assertIn(zipfilename, in_todaydir)
+        for file in in_todaydir:
+            if file.endswith('.zip'):
+                continue
+            self.assertTrue(file.endswith('.log'))
+        
+        # 생성된 zip 파일 내부 구조 확인 테스트.
+        decompress_zip(zippath, self.tempdir)
+        decom_dir = os.listdir(self.tempdir)[0]
+        self.assertEqual(decom_dir, today_dir)
+        in_decom_dir = os.listdir(os.path.join(self.tempdir, decom_dir))
+        for file in in_decom_dir:
+            self.assertIn(file, logfiles)
+
+    def testZipBaseDirCase1(self):
+        """zipBaseDir() 메서드 테스트.
+        zip 파일을 로그 베이스 디렉토리 안에 저장하는 경우 테스트.
+        """
+        self.lfm.zipBaseDir()
+
+        zipfilename = '.'.join(
+            [os.path.basename(self.test_rootdir_path), 'zip']
+        )
+        zippath = os.path.join(self.test_rootdir_path, zipfilename)
+        in_basedir = os.listdir(self.test_rootdir_path)
+        # zip 파일이 생성되었는지, 그리고 의도된 이름을 가진 zip 파일인지 확인.
+        self.assertIn(zipfilename, in_basedir)
+        self.assertTrue(os.path.exists(zippath))
+
+        in_basedir.remove(zipfilename)
+
+        # 로그 파일들이 그대로 있는지, 
+        # 의도치 않게 zip 파일이 생성되진 않았는지 확인.
+        for datedir in in_basedir:
+            dirpath = os.path.join(self.test_rootdir_path, datedir)
+            lognum = 0
+            for file in os.listdir(dirpath):
+                filepath = os.path.join(dirpath, file)
+                if filepath.endswith('.log'):
+                    lognum += 1
+            self.assertEqual(lognum, len(self.datefd[datedir]))
+
+        # zip 파일 내부 구조 확인 테스트.
+        decompress_zip(zippath, self.tempdir)
+        in_zip = os.listdir(self.tempdir)
+        rootdirname = in_zip[0]
+        self.assertEqual(len(in_zip), 1)
+        self.assertEqual(
+            rootdirname, os.path.basename(self.test_rootdir_path)
+        )
+        in_root = get_all_in_rootdir(
+            os.path.join(self.tempdir, rootdirname), False
+        )
+        in_root.sort()
+        self.entities.sort()
+        self.assertEqual(in_root, self.entities)
+
+    def testZipBaseDirCase2(self):
+        """zipBaseDir() 메서드 테스트.
+        zip 파일을 로그 베이스 디렉토리 밖에 저장하는 경우 테스트.
+        """
+        target_dir = r'..\testdata\zipsave'
+        self.lfm.zipBaseDir(target_dir)
+
+        zipfilename = '.'.join(
+            [os.path.basename(self.test_rootdir_path), 'zip']
+        )
+        zippath = os.path.join(target_dir, zipfilename)
+        # 실제 원하는 위치에 zip 파일이 생성되었는지 확인.
+        self.assertTrue(os.path.exists(zippath))
+        in_target_dir = os.listdir(target_dir)
+        self.assertEqual(in_target_dir[0], zipfilename)
+        self.assertEqual(len(in_target_dir), 1)
+
+        # 기존 로그 베이스 디렉토리 내부는 zip 파일 생성 없이 
+        # 그대로 존재하는지 테스트. 
+        leaf_base = get_all_in_rootdir(self.test_rootdir_path, False)
+        for leaf in leaf_base:
+            self.assertFalse(leaf.endswith('.zip'))
+        leaf_base.sort()
+        self.entities.sort()
+        self.assertEqual(leaf_base, self.entities)
+
+        # zip 파일 내부 구조 확인 테스트.
+        decompress_zip(zippath, self.tempdir)
+        in_zip = os.listdir(self.tempdir)
+        rootdirname = in_zip[0]
+        self.assertEqual(len(in_zip), 1)
+        self.assertEqual(
+            rootdirname, os.path.basename(self.test_rootdir_path)
+        )
+        in_root = get_all_in_rootdir(
+            os.path.join(self.tempdir, rootdirname), False
+        )
+        in_root.sort()
+        self.assertEqual(in_root, self.entities)
+
+
 if __name__ == '__main__':
     def test_only_one(test_classname):
         suite_obj = unittest.TestSuite()
@@ -662,3 +890,7 @@ if __name__ == '__main__':
     unittest.main()
     #test_only_one(TestEraseLogFile)
     #test_only_one(TestDeleteLogFile)
+    #test_only_one(TestZip)
+    #test_only_one(TestZip('testZipTodayDateDir'))
+    #test_only_one(TestZip('testZipBaseDirCase1'))
+    #test_only_one(TestZip('testZipBaseDirCase2'))

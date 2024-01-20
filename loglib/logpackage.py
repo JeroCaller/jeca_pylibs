@@ -1613,7 +1613,8 @@ class LogFileManager():
             with zipfile.ZipFile(zipfile_path, 'w') as zf:
                 for file in logfiles:
                     fullpath = os.path.join(datedir_path, file)
-                    zf.write(fullpath)
+                    alter_path = os.path.join(datedir, file)
+                    zf.write(fullpath, alter_path)
             
             if not left_original:
                 for file in logfiles:
@@ -1642,14 +1643,12 @@ class LogFileManager():
         if dt.date() != datetime.date.today():
             return False
         
-        today_zippath = os.path.join(
-            today_dir_path, 
-            '.'.join([os.path.basename(today_dir_path), 'zip'])
-        )
+        dirname = os.path.basename(today_dir_path)
+        zipfilename = '.'.join([dirname, 'zip'])
+        today_zippath = os.path.join(today_dir_path, zipfilename)
 
-        in_datedir = os.listdir(today_dir_path)
         logfiles = []
-        for file in in_datedir:
+        for file in os.listdir(today_dir_path):
             if not file.endswith('.log'):
                 continue
             logfiles.append(file)
@@ -1657,7 +1656,8 @@ class LogFileManager():
         with zipfile.ZipFile(today_zippath, 'w') as zf:
             for file in logfiles:
                 fullpath = os.path.join(today_dir_path, file)
-                zf.write(fullpath)
+                alter_path = os.path.join(dirname, file)
+                zf.write(fullpath, alter_path)
 
         if not os.path.exists(today_zippath):
             return False
