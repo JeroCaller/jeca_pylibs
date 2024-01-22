@@ -3,12 +3,10 @@
 testdata\\testpkg2 를 이용함.
 
 """
-
 import unittest
-import os
-import logging
-import re
 import sys
+import os
+import re
 
 from dirimporttool import get_super_dir_directly
 
@@ -17,10 +15,9 @@ for i in range(1, 2+1):
     sys.path.append(super_dir)
 
 from logpackage import EasySetLogFileEnv
-from logpackage import LOGGERTREE
 from tools import DateOptions, DateTools
-from tests.testdata.testpkg2.main import mainfunc
 from sub_modules.dirsearch import get_all_in_rootdir
+from tests.testdata.testpkg2.main import mainfunc
 
 # 전역 상수 정의
 TEST_ON: bool = False
@@ -186,7 +183,5 @@ class TestRotateLogFileDay(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # 에러 로깅을 원할 경우 아래 코드를 주석 해제.
-    #TEST_ON = True
-
     unittest.main()
+    

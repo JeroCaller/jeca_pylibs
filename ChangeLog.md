@@ -1,6 +1,10 @@
 changelog
 ---
 - - -
+> 2024-01-22
+> - loglib
+>   - 테스트 코드 리팩토링. 라이브러리 패키지 구조 리팩토링.
+
 > 2024-01-21
 > - loglib.logpackage, test_lfm
 >   - LogFileManager() 클래스 내 zip 압축 기능 관련 테스트 코드 구현 및 테스트 과정에서 발견한 버그 수정. (테스트 결과 성공.)

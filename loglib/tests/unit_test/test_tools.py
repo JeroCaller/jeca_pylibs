@@ -5,14 +5,17 @@ import datetime
 import calendar
 import os
 import random
-import time
+import shutil
 from operator import itemgetter
 
 from dirimporttool import get_super_dir_directly
 
-super_dir = get_super_dir_directly(__file__, 2)
-sys.path.append(super_dir)
+for i in range(1, 2+1):
+    super_dir = get_super_dir_directly(__file__, i)
+    sys.path.append(super_dir)
 
+import helpers
+import sub_modules.fdhandler as fdh
 from tools import (DateOptions, DateTools)
 
 
@@ -312,20 +315,6 @@ class TestDateTools(unittest.TestCase):
 
 
 # ==== TestSearchDateDir() 테스트 클래스에 쓰일 함수들
-def make_datedirs(root_dir: str, datedirs: list[str]):
-    """테스트를 위한 날짜 디렉토리 생성 함수.
-    root_dir로 입력되는 루트 디렉토리 경로는 실제로 존재해야 함.
-    datedirs는 날짜 디렉토리의 이름으로 설정할 날짜 형식 문자열들의 
-    리스트.
-
-    """
-    for d in datedirs:
-        try:
-            fullpath = os.path.join(root_dir, d)
-            os.mkdir(fullpath)
-        except FileExistsError:
-            pass
-
 def process_real_data(
         test_results: list[tuple[int, datetime.date, str]]
     ) -> (list[tuple[int, str, str]]):
@@ -359,16 +348,21 @@ class TestSearchDateDir(unittest.TestCase):
     """tools.DateTools.searchDateDir() 메서드 테스트"""
     datedir_made: bool = False
 
+    date_rootdir = r'..\testdata\datedirs'
+
     def setUp(self):
         self.maxDiff = None
 
         self.datetool = DateTools()
         self.d_opt = DateOptions()
 
-        self.day_root_dir = '..\\testdata\\datedirs\\days'
-        self.week_root_dir = '..\\testdata\\datedirs\\weeks'
-        self.month_root_dir = '..\\testdata\\datedirs\\months'
-        self.year_root_dir = '..\\testdata\\datedirs\\years'
+        self.rootdir = TestSearchDateDir.date_rootdir
+        datedirlist = []
+        for dirname in ['days', 'weeks', 'months', 'years']:
+            date_dirpath = os.path.join(self.rootdir, dirname)
+            datedirlist.append(date_dirpath)
+        self.day_root_dir, self.week_root_dir, \
+        self.month_root_dir, self.year_root_dir = datedirlist
 
         self.day_dates = [
             '010-5-10', '010-1234-5678', '2023-11-31', 
@@ -402,11 +396,14 @@ class TestSearchDateDir(unittest.TestCase):
             random.shuffle(d)
 
         if not TestSearchDateDir.datedir_made:
-            make_datedirs(self.day_root_dir, self.day_dates)
-            make_datedirs(self.week_root_dir, self.week_dates)
-            make_datedirs(self.month_root_dir, self.month_dates)
-            make_datedirs(self.year_root_dir, self.year_dates)
+            os.makedirs(self.rootdir, exist_ok=True)
+            for rd, dname in zip(datedirlist, dates):
+                fdh.make_package(rd, dname)
             TestSearchDateDir.datedir_made = True
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.date_rootdir)
 
     def testDay(self):
         results = process_real_data(
@@ -483,40 +480,6 @@ class TestSearchDateDir(unittest.TestCase):
 
 
 # TestSearchDateDirBirth 클래스에서의 테스트를 위한 함수들
-def make_datedirs_with_delay(
-        root_dir: str, 
-        sleep_date: list[tuple[int, str]],
-        allow_print: bool = True
-    ):
-    """디렉토리 생성 시 디렉토리 생성 시각도 테스트 요소이기에 
-    time.sleep() 함수를 이용하여 일부러 생성 시간을 딜레이 시키도록 함.
-
-    Parameters
-    ----------
-    root_dir : str
-        날짜 디렉토리들을 생성할 루트 디렉토리의 경로
-    sleep_date : list[tuple[sec, date_dirname]]
-        날짜 디렉토리 생성 지연 시간과 해당 날짜 디렉토리명을 묶은 데이터.
-    
-    """
-    if allow_print:
-        print("테스트를 위한 디렉토리 생성 중... 시간이 다소 걸립니다.")
-        print("생성된 디렉토리 목록.")
-    
-    count_makedir = 0  # 날짜 디렉토리 생성 개수.
-    for t, datedir in sleep_date:
-        fullpath = os.path.join(root_dir, datedir)
-        if os.path.isdir(fullpath):
-            continue # 이미 존재하는 디렉토리를 재생성하지 않도록 한다.
-        time.sleep(t)
-        os.mkdir(fullpath)
-        print(fullpath)
-        count_makedir += 1
-    
-    if allow_print:
-        print(f"생성 완료. 총 {count_makedir}개 생성됨.")
-        print("이미 존재하는 디렉토리는 새로 생성되지 않습니다.")
-
 def process_data_no_datetime(data):
     """searchDateDir(), searchDateDirBirth() 메서드 결과를 가공하는 함수.
     가운데 date(), datetime() 객체 요소는 제거, 맨 마지막의 경로 요소는 디렉토리명만 
@@ -543,8 +506,9 @@ class TestSearchDateDirBirth(unittest.TestCase):
     """DateTools.searchDateDirBirth() 메서드 테스트 클래스."""
     access_tried: bool = False
     has_real_dirs: bool = False
-
     made_testdirs: bool = False
+
+    drootdir = r'..\testdata\datedirbirth'
 
     def setUp(self):
         self.datetool = DateTools()
@@ -562,7 +526,7 @@ class TestSearchDateDirBirth(unittest.TestCase):
         # ========
 
         # 테스트를 위해 임의로 날짜 디렉토리들을 형성하기 위한 초기 설정.
-        self.datedirs_rootdir = r'..\testdata\datedirbirth'
+        self.datedirs_rootdir = TestSearchDateDirBirth.drootdir
         self.testdatas = [
             (0, '2023-12-24'),
             (1, '2023-12-25'),
@@ -576,10 +540,15 @@ class TestSearchDateDirBirth(unittest.TestCase):
             (1, '2022-01-01'),
         ]
         if not TestSearchDateDirBirth.made_testdirs:
-            make_datedirs_with_delay(
-                self.datedirs_rootdir, self.testdatas, False
+            os.makedirs(self.datedirs_rootdir, exist_ok=True)
+            helpers.make_entities_with_delay(
+                self.datedirs_rootdir, self.testdatas
             )
             TestSearchDateDirBirth.made_testdirs = True
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.drootdir)
 
     def testWithRealDirs(self):
         """실제 생성 일시에 적어도 하루 이상 차이나는 날짜 디렉토리들에 
@@ -638,17 +607,8 @@ class TestSearchDateDirBirth(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    def test_only_one(test_classname):
-        suite_obj = unittest.TestSuite()
-        try:
-            suite_obj.addTest(unittest.makeSuite(test_classname))
-        except TypeError:
-            suite_obj.addTest(test_classname)
-
-        runner = unittest.TextTestRunner()
-        runner.run(suite_obj)
-
     # 원하는 테스트 코드만 주석 해제하여 실행한다.
     unittest.main()
-    #test_only_one(TestSearchDateDirBirth('testWithRealDirs'))
-    
+    #helpers.test_only_one(TestSearchDateDirBirth('testWithRealDirs'))
+    #helpers.test_only_one(TestSearchDateDirBirth)
+    #helpers.test_only_one(TestSearchDateDir)
