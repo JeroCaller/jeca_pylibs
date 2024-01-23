@@ -607,8 +607,12 @@ class TestSearchDateDirBirth(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # 원하는 테스트 코드만 주석 해제하여 실행한다.
-    unittest.main()
-    #helpers.test_only_one(TestSearchDateDirBirth('testWithRealDirs'))
-    #helpers.test_only_one(TestSearchDateDirBirth)
-    #helpers.test_only_one(TestSearchDateDir)
+    @helpers.WorkCWD(__file__)
+    def exec_test():
+        # 원하는 테스트 코드만 주석 해제하여 실행한다.
+        unittest.main()
+        #helpers.test_only_one(TestSearchDateDirBirth('testWithRealDirs'))
+        #helpers.test_only_one(TestSearchDateDirBirth)
+        #helpers.test_only_one(TestSearchDateDir)
+
+    exec_test()

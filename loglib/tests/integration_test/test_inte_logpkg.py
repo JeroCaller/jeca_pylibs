@@ -639,18 +639,22 @@ class TestLogFileOptYear(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # 다음 코드들 중 한 줄만 택해 주석해제하여 테스트.
-    # (원한다면 모든 코드를 주석 해제하여 테스트해도 됨.)
-    unittest.main()
-    #helpers.test_only_one(TestLogFileOptionsDay)
-    #helpers.test_only_one(TestLogFileOptWeek)
-    #helpers.test_only_one(TestLogFileOptMonth)
-    #helpers.test_only_one(TestLogFileOptYear)
+    @helpers.WorkCWD(__file__)
+    def exec_test():
+        # 다음 코드들 중 한 줄만 택해 주석해제하여 테스트.
+        # (원한다면 모든 코드를 주석 해제하여 테스트해도 됨.)
+        unittest.main()
+        #helpers.test_only_one(TestLogFileOptionsDay)
+        #helpers.test_only_one(TestLogFileOptWeek)
+        #helpers.test_only_one(TestLogFileOptMonth)
+        #helpers.test_only_one(TestLogFileOptYear)
 
-    # 각 케이스에 대해 따로 테스트하고자 할 때, unittest.main() 줄은 주석처리한 후,
-    # 원하는 줄만 주석해제 하여 실행하면 된다.
-    #helpers.test_only_one(TestLogFileOptionsDay)
-    #helpers.test_only_one(TestLogFileOptWeek)
-    #helpers.test_only_one(TestLogFileOptMonth)
-    #helpers.test_only_one(TestLogFileOptYear)
+        # 각 케이스에 대해 따로 테스트하고자 할 때, unittest.main() 줄은 주석처리한 후,
+        # 원하는 줄만 주석해제 하여 실행하면 된다.
+        #helpers.test_only_one(TestLogFileOptionsDay)
+        #helpers.test_only_one(TestLogFileOptWeek)
+        #helpers.test_only_one(TestLogFileOptMonth)
+        #helpers.test_only_one(TestLogFileOptYear)
+
+    exec_test()
     

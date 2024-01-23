@@ -14,6 +14,7 @@ for i in range(1, 2+1):
     super_dir = get_super_dir_directly(__file__, i)
     sys.path.append(super_dir)
 
+import helpers
 from logpackage import EasySetLogFileEnv
 from tools import DateOptions, DateTools
 from sub_modules.dirsearch import get_all_in_rootdir
@@ -183,5 +184,9 @@ class TestRotateLogFileDay(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    @helpers.WorkCWD(__file__)
+    def exec_test():
+        unittest.main()
+        
+    exec_test()
     

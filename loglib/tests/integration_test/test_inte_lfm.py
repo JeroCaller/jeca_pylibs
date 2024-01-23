@@ -127,7 +127,6 @@ class TestRotateDirLog(unittest.TestCase):
 
     def testDateDirsDay(self):
         leaf_entities = get_all_in_rootdir(self.initconfigday.basedir)
-        #datedirs = get_datedir_path(leaf_entities)
         datedirs = helpers.get_datedir_path(leaf_entities)
         if len(datedirs) < self.datedir_day_num:
             self.skipTest('테스트를 위한 데이터가 충분하지 않아 스킵됩니다.')
@@ -157,5 +156,8 @@ class TestRotateDirLog(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
-    
+    @helpers.WorkCWD(__file__)
+    def exec_test():
+        unittest.main()
+
+    exec_test()

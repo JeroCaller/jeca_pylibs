@@ -647,12 +647,16 @@ class TestZip(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    # 다음 중 원하는 테스트의 코드만 주석 해제할 것.
-    unittest.main()
-    #helpers.test_only_one(TestEraseLogFile)
-    #helpers.test_only_one(TestDeleteLogFile)
-    #helpers.test_only_one(TestZip)
-    #helpers.test_only_one(TestZip('testZipTodayDateDir'))
-    #helpers.test_only_one(TestZip('testZipBaseDirCase1'))
-    #helpers.test_only_one(TestZip('testZipBaseDirCase2'))
-    #helpers.test_only_one(TestRotateDirsUnittest)
+    @helpers.WorkCWD(__file__)
+    def exec_test():
+        # 다음 중 원하는 테스트의 코드만 주석 해제할 것.
+        unittest.main()
+        #helpers.test_only_one(TestEraseLogFile)
+        #helpers.test_only_one(TestDeleteLogFile)
+        #helpers.test_only_one(TestZip)
+        #helpers.test_only_one(TestZip('testZipTodayDateDir'))
+        #helpers.test_only_one(TestZip('testZipBaseDirCase1'))
+        #helpers.test_only_one(TestZip('testZipBaseDirCase2'))
+        #helpers.test_only_one(TestRotateDirsUnittest)
+
+    exec_test()
