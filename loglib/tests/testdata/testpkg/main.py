@@ -1,7 +1,8 @@
+"""로깅 테스트를 위한 패키지 및 모듈 모음. 
+테스트 모듈에 연결하여 통합 테스트를 하기 위한 용도. 
+
 """
-로깅 테스트를 위한 패키지 및 모듈 모음. 
-단위 테스트 모듈 test_logpackage.py에서 테스트하기 위한 용도.
-"""
+
 import sys
 
 from dirimporttool import get_super_dir_directly, get_current_absdir

@@ -24,6 +24,14 @@ from sub_modules.tree import PathTree
 from sub_modules.tree import AbsPath
 from loghandlers import CustomRotatingFileHandler
 
+__all__ = [
+    'NoneType', 'LoggerLevel', 'DirPath', 'DirName', 
+    'FilePath', 'FileName', 'LOGGERTREE', 'DEFAULT',
+    'DEFAULT_TOPLEVEL_LOGGERS', 'DEFAULT_LEVEL_LOG_FILE_NAMES',
+    'LogFuncEndPoint', 'DetectErrorAndLog', 'LogFileEnvironment', 
+    'EasySetLogFileEnv', 'PackageLogger', 'LogFileManager',
+]
+
 # type aliases
 NoneType: TypeAlias = Literal['NoneType']
 LoggerLevel: TypeAlias = int
@@ -33,12 +41,6 @@ FilePath: TypeAlias = str
 FileName: TypeAlias = str
 
 # 상수 정의
-ALLFILES = 0
-DEBUGFILE = 1
-ERRORFILE = 2
-LOGGERFILE = 3
-WhichFile: TypeAlias = Literal[0, 1, 2, 3]
-
 LOGGERTREE = 4
 SpecialLoggerType: TypeAlias = Literal[4]
 
@@ -56,36 +58,6 @@ DEFAULT_LEVEL_LOG_FILE_NAMES = {
     logging.ERROR: 'error.log',
     LOGGERTREE: 'logger_tree.log',
 }
-
-def _makedir(superdirpath: str, dirname: str):
-    """특정 위치에 디렉토리를 생성하는 함수. 
-
-    Parameters
-    ----------
-    superdirpath : str
-        폴더를 생성하고자 하는 상위 디렉토리 주소
-    dirname : str
-        생성하고자 하는 폴더 이름.
-
-    Raises
-    -----
-    FileNotFoundError
-        만약 superdirpath로 대입한 디렉토리 주소가 존재하지 않는다면 
-        FileNotFoundError가 발생함.
-
-    Examples
-    --------
-
-    >>> makedir("C:/super_dir", "sub_dir")
-    C:/super_dir/sub_dir
-    """
-    fullpath = os.path.join(superdirpath, dirname)
-    try:
-        os.mkdir(fullpath)
-    except FileExistsError:
-        return fullpath
-    return fullpath
-
 
 # 로깅 관련 데코레이터 클래스들.
 class LogFuncEndPoint():
@@ -931,7 +903,8 @@ class PackageLogger():
             new_logenv: EasySetLogFileEnv | LogFileEnvironment
         ):
         """새 로그 환경 설정 클래스 EasySetLogFileEnv 
-        또는 LogFileEnvironment의 인스턴스 를 대입하여 새 로그 환경으로 설정한다.
+        또는 LogFileEnvironment의 인스턴스를 대입하여 새 로그 환경으로 설정한다.
+
         """
         PackageLogger._unique_logenv = new_logenv
         self.logenv = PackageLogger._unique_logenv
@@ -1176,20 +1149,6 @@ class LogFileManager():
 
     이 클래스에서 진행되는 모든 작업은 로그 파일들을 하나로 모아 
     관리하는 베이스 디렉토리 안에서만 진행된다.
-
-    추후 추가 예정 기능들.
-    1. 로그 파일들 중 원하는 로그 파일의 내용을 전부 지우는 기능. 
-    또는 날짜별 또는 베이스 디렉토리 내 모든 로그 파일 내 내용을 지우는 기능. 
-    (로그 파일 자체를 삭제하지는 않음.)
-    2. 특정 로그 파일 또는 날짜 디렉토리를 삭제하는 기능. 
-    또는 특정 디렉토리 또는 베이스 디렉토리 내 모든 내용물을 삭제하는 기능. 
-        - 오늘 날짜를 기준으로 특정 기간 이상 지난 날짜 디렉토리와 그 안의 
-        로그 파일들을 삭제하는 기능 추가 예정.
-    (베이스 디렉토리 자체를 삭제하는 기능도 추가 예정)
-    3. 베이스 디렉토리 내 로그 파일들을 zip 파일로 압축하는 기능.
-        - 날짜별로 구분되어 있는 경우, 여러 날짜 디렉토리 중 원하는 
-        날짜의 디렉토리와 그 안의 로그 파일들만 zip 파일로 압축하거나, 
-        베이스 디렉토리 내에 있는 모든 날짜별 디렉토리들을 압축하는 기능.
 
     """
     # 상수 정의

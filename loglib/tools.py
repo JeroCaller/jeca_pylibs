@@ -5,11 +5,6 @@ import time
 from typing import Literal, TypeAlias
 from operator import itemgetter
 
-try:
-    from sub_modules.dirsearch import get_all_in_rootdir
-except ModuleNotFoundError:
-    from .sub_modules.dirsearch import get_all_in_rootdir
-
 
 class DateOptions():
     """날짜 분류 관련 상수 정의 클래스. 

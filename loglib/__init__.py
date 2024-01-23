@@ -1,3 +1,3 @@
 __all__ = [
-    'logpackage', 'logexc', 'tools',
+    'logpackage', 'logexc', 'tools', 'loghandlers'
 ]
