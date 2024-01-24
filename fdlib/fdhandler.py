@@ -190,6 +190,35 @@ class JsonFileHandler():
         return data
     
 
+class WorkCWD():
+    """실행하고자 하는 파이썬 스크립트 내에 상대경로로 
+    디렉토리, 파일을 조작하는 기능이 존재할 경우, 
+    엉뚱한 경로로 지정되어 엉뚱한 결과를 내는 것을 방지하기 위해 
+    현재 작업 디렉토리도 해당 파이썬 스크립트가 들어있는 디렉토리 
+    경로로 바꾼 후, 실행한 후에 작업이 끝나면 다시 원래 작업 디렉토리로 
+    변경해주는 클래스 데코레이터.
+    """
+    def __init__(self, curdir: str):
+        """
+        Parameters
+        ----------
+        curdir : str
+            현재 파일의 경로 입력 (__file__을 입력해도 됨)
+        
+        """
+        self.current_dir = os.path.dirname(curdir)
+
+    def __call__(self, calla):
+        def wrapper(*args, **kwargs):
+            original_dir = os.getcwd()
+            if original_dir != self.current_dir:
+                os.chdir(self.current_dir)
+            return_value = calla(*args, **kwargs)
+            os.chdir(original_dir)
+            return return_value
+        return wrapper
+    
+
 def make_package(base_dir: str, entities: list[str]) -> (None):
     """패키지 디렉토리를 생성하는 함수. 
 
