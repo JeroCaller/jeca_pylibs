@@ -29,7 +29,7 @@ program_start_end_logger = pl.getInfoLogger('program_start_end')
 # 로깅 모드 온오프 기능 테스트. 원하면 아래 코드를 주석처리.
 #pl.setLoggingOnOff(False)
 
-@DetectErrorAndLog(error_logger)
+@DetectErrorAndLog(error_logger, False)
 @LogFuncEndPoint(program_start_end_logger)
 def main():
     pm_numset = 5, 10

@@ -24,7 +24,7 @@ main_pl = PackageLogger(EasySetLogFileEnv())
 error_logger = main_pl.getErrorLogger(__file__)
 program_start_end_logger = main_pl.getInfoLogger('program_start_end_logger')
 
-@DetectErrorAndLog(error_logger)
+@DetectErrorAndLog(error_logger, False)
 @LogFuncEndPoint(program_start_end_logger)
 def mainfunc(
         log_env_obj: EasySetLogFileEnv, 

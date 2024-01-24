@@ -113,7 +113,7 @@ class TestLogDecor(unittest.TestCase):
         self.assertIn('INFO', log_data)
 
     def testDetectErrorAndLog(self):
-        @DetectErrorAndLog(self.logger)
+        @DetectErrorAndLog(self.logger, False)
         def some_error_func():
             return 1 / 0
 
@@ -128,7 +128,7 @@ class TestLogDecor(unittest.TestCase):
         어떤 함수 내부의 함수에서 에러가 나도 예외 로깅이 
         되는지 테스트.
         """
-        @DetectErrorAndLog(self.logger)
+        @DetectErrorAndLog(self.logger, False)
         def outer_func():
             def inner_func():
                 data = int('hi')
@@ -150,7 +150,7 @@ class TestLogDecor(unittest.TestCase):
 
         # test 1
         with self.assertRaises(LogLowestLevelError):
-            @DetectErrorAndLog(self.logger)
+            @DetectErrorAndLog(self.logger, False)
             def some_error_func():
                 return 1 / 0
 
@@ -159,7 +159,7 @@ class TestLogDecor(unittest.TestCase):
         # test 2
         # 예외가 발생하지 않을 거라 예측되는 테스트.
         self.logger.setLevel(logging.ERROR)
-        @DetectErrorAndLog(self.logger)
+        @DetectErrorAndLog(self.logger, False)
         def some_error_func():
             return 1 / 0
 
@@ -172,7 +172,7 @@ class TestLogDecor(unittest.TestCase):
         """에러가 발생하지 않았을 떄 에러 미발생 관련 메시지가 로깅되는지
         테스트.
         """
-        @DetectErrorAndLog(self.logger)
+        @DetectErrorAndLog(self.logger, False)
         def no_error_func():
             return 1 + 1
         

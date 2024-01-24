@@ -95,7 +95,7 @@ class LogFuncEndPoint():
 
 
 class DetectErrorAndLog():
-    def __init__(self, logger_obj: logging.Logger):
+    def __init__(self, logger_obj: logging.Logger, on_error: bool = True):
         """특정 함수 또는 메서드 내에서 발생할 수 있는 모든 예외 메시지를 
         로그에 기록하는 데코레이터. 
 
@@ -116,6 +116,11 @@ class DetectErrorAndLog():
             로깅하는 모듈 내에서 정의된 Logger 객체. 
             해당 로거 객체의 최소 level이 적어도 ERROR 이하로 지정되어야 함. 
             그래야 해당 로거 객체에 연결된 파일 대상에 로그 기록 가능. 
+        on_error : bool, default True
+            에러 로깅 후 원래 발생된 예외를 다시 일으켜 사용자에게 
+            명시적으로 알릴 것인지를 결정하는 매개변수. 
+            True 시 에러가 로깅도 되고, 해당 예외를 사용자에게도 그대로 알린다. 
+            False 시 에러 로깅은 되나, 해당 예외를 사용자에게 알리지 않는다. 
 
         Raises
         ------
@@ -130,6 +135,8 @@ class DetectErrorAndLog():
                 logging.getLevelName(self.logger.level),
                 logging.ERROR
             )
+        
+        self.on_error = on_error
 
     def __call__(self, func: callable):
         def wrapper(*args, **kwargs):
@@ -137,7 +144,11 @@ class DetectErrorAndLog():
                 return_value = func(*args, **kwargs)
             except Exception as e:
                 self.logger.exception(e)
-                return None
+                if self.on_error:
+                    # 에러 로깅 후 에러 표시.
+                    raise
+                else:
+                    return None
             else:
                 # WARNING - 테스트 코드에서 일별을 제외한 날짜별 로깅 시 
                 # WARNING - 에러 미발생 로깅이 여러 번 발생.
